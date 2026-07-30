@@ -1,0 +1,590 @@
+/*
+ * jdarith.c
+ *
+ * This file was part of the Independent JPEG Group's software:
+ * Developed 1997-2015 by Guido Vollbeding.
+ * libjpeg-turbo Modifications:
+ * Copyright (C) 2015-2020, 2022, D. R. Commander.
+ * For conditions of distribution and use, see the accompanying README.ijg
+ * file.
+ *
+ * This file contains portable arithmetic entropy encoding routines for JPEG
+ * (implementing Recommendation ITU-T T.81 | ISO/IEC 10918-1).
+ *
+ * Both sequential and progressive modes are supported in this single module.
+ *
+ * Suspension is not currently supported in this module.
+ *
+ * NOTE: All referenced figures are from
+ * Recommendation ITU-T T.81 (1992) | ISO/IEC 10918-1:1994.
+ */
+
+#define JPEG_INTERNALS
+#include "jinclude.h"
+#include "jpeglib.h"
+
+#define NEG_1  ((unsigned int)-1)
+
+typedef struct {
+  struct jpeg_entropy_decoder pub;
+
+  JLONG c;       /* C register, base of coding interval + input bit buffer */
+  JLONG a;               /* A register, normalized size of coding interval */
+  int ct;     /* bit shift counter, # of bits left in bit buffer part of C */
+                                                         /* init: ct = -16 */
+                                                         /* run: ct = 0..7 */
+                                                         /* error: ct = -1 */
+  int last_dc_val[MAX_COMPS_IN_SCAN]; /* last DC coef for each component */
+  int dc_context[MAX_COMPS_IN_SCAN]; /* context index for DC conditioning */
+
+  unsigned int restarts_to_go;  /* MCUs left in this restart interval */
+
+  unsigned char *dc_stats[NUM_ARITH_TBLS];
+  unsigned char *ac_stats[NUM_ARITH_TBLS];
+
+  unsigned char fixed_bin[4];
+} arith_entropy_decoder;
+
+typedef arith_entropy_decoder *arith_entropy_ptr;
+
+#define DC_STAT_BINS  64
+#define AC_STAT_BINS  256
+
+LOCAL(int)
+get_byte(j_decompress_ptr cinfo)
+{
+  struct jpeg_source_mgr *src = cinfo->src;
+
+  if (src->bytes_in_buffer == 0)
+    if (!(*src->fill_input_buffer) (cinfo))
+      ERREXIT(cinfo, JERR_CANT_SUSPEND);
+  src->bytes_in_buffer--;
+  return *src->next_input_byte++;
+}
+
+LOCAL(int)
+arith_decode(j_decompress_ptr cinfo, unsigned char *st)
+{
+  register arith_entropy_ptr e = (arith_entropy_ptr)cinfo->entropy;
+  register unsigned char nl, nm;
+  register JLONG qe, temp;
+  register int sv, data;
+
+  while (e->a < 0x8000L) {
+    if (--e->ct < 0) {
+      if (cinfo->unread_marker)
+        data = 0;               /* stuff zero data */
+      else {
+        data = get_byte(cinfo); /* read next input byte */
+        if (data == 0xFF) {     /* zero stuff or marker code */
+          do data = get_byte(cinfo);
+          while (data == 0xFF); /* swallow extra 0xFF bytes */
+          if (data == 0)
+            data = 0xFF;        /* discard stuffed zero byte */
+          else {
+            cinfo->unread_marker = data;
+            data = 0;
+          }
+        }
+      }
+      e->c = (e->c << 8) | data; /* insert data into C register */
+      if ((e->ct += 8) < 0)      /* update bit shift counter */
+        if (++e->ct == 0)
+          e->a = 0x8000L; /* => e->a = 0x10000L after loop exit */
+    }
+    e->a <<= 1;
+  }
+
+  sv = *st;
+  qe = jpeg_aritab[sv & 0x7F];  /* => Qe_Value */
+  nl = (unsigned char)(qe & 0xFF);  qe >>= 8;    /* Next_Index_LPS + Switch_MPS */
+  nm = (unsigned char)(qe & 0xFF);  qe >>= 8;    /* Next_Index_MPS */
+
+  temp = e->a - qe;
+  e->a = temp;
+  temp <<= e->ct;
+  if (e->c >= temp) {
+    e->c -= temp;
+    if (e->a < qe) {
+      e->a = qe;
+      *st = (sv & 0x80) ^ nm;   /* Estimate_after_MPS */
+    } else {
+      e->a = qe;
+      *st = (sv & 0x80) ^ nl;   /* Estimate_after_LPS */
+      sv ^= 0x80;               /* Exchange LPS/MPS */
+    }
+  } else if (e->a < 0x8000L) {
+    if (e->a < qe) {
+      *st = (sv & 0x80) ^ nl;   /* Estimate_after_LPS */
+      sv ^= 0x80;               /* Exchange LPS/MPS */
+    } else {
+      *st = (sv & 0x80) ^ nm;   /* Estimate_after_MPS */
+    }
+  }
+
+  return sv >> 7;
+}
+
+LOCAL(void)
+process_restart(j_decompress_ptr cinfo)
+{
+  arith_entropy_ptr entropy = (arith_entropy_ptr)cinfo->entropy;
+  int ci;
+  jpeg_component_info *compptr;
+
+  if (!(*cinfo->marker->read_restart_marker) (cinfo))
+    ERREXIT(cinfo, JERR_CANT_SUSPEND);
+
+  for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
+    compptr = cinfo->cur_comp_info[ci];
+    if (!cinfo->progressive_mode || (cinfo->Ss == 0 && cinfo->Ah == 0)) {
+      memset(entropy->dc_stats[compptr->dc_tbl_no], 0, DC_STAT_BINS);
+      entropy->last_dc_val[ci] = 0;
+      entropy->dc_context[ci] = 0;
+    }
+    if (!cinfo->progressive_mode || cinfo->Ss) {
+      memset(entropy->ac_stats[compptr->ac_tbl_no], 0, AC_STAT_BINS);
+    }
+  }
+
+  entropy->c = 0;
+  entropy->a = 0;
+  entropy->ct = -16;
+
+  entropy->restarts_to_go = cinfo->restart_interval;
+}
+
+METHODDEF(boolean)
+decode_mcu_DC_first(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
+{
+  arith_entropy_ptr entropy = (arith_entropy_ptr)cinfo->entropy;
+  JBLOCKROW block;
+  unsigned char *st;
+  int blkn, ci, tbl, sign;
+  int v, m;
+
+  if (cinfo->restart_interval) {
+    if (entropy->restarts_to_go == 0)
+      process_restart(cinfo);
+    entropy->restarts_to_go--;
+  }
+
+  if (entropy->ct == -1) return TRUE;
+
+  for (blkn = 0; blkn < cinfo->blocks_in_MCU; blkn++) {
+    block = MCU_data[blkn];
+    ci = cinfo->MCU_membership[blkn];
+    tbl = cinfo->cur_comp_info[ci]->dc_tbl_no;
+
+    st = entropy->dc_stats[tbl] + entropy->dc_context[ci];
+
+    if (arith_decode(cinfo, st) == 0)
+      entropy->dc_context[ci] = 0;
+    else {
+      sign = arith_decode(cinfo, st + 1);
+      st += 2;  st += sign;
+      if ((m = arith_decode(cinfo, st)) != 0) {
+        st = entropy->dc_stats[tbl] + 20;       /* Table F.4: X1 = 20 */
+        while (arith_decode(cinfo, st)) {
+          if ((m <<= 1) == 0x8000) {
+            WARNMS(cinfo, JWRN_ARITH_BAD_CODE);
+            entropy->ct = -1;                   /* magnitude overflow */
+            return TRUE;
+          }
+          st += 1;
+        }
+      }
+      if (m < (int)((1L << cinfo->arith_dc_L[tbl]) >> 1))
+        entropy->dc_context[ci] = 0;               /* zero diff category */
+      else if (m > (int)((1L << cinfo->arith_dc_U[tbl]) >> 1))
+        entropy->dc_context[ci] = 12 + (sign * 4); /* large diff category */
+      else
+        entropy->dc_context[ci] = 4 + (sign * 4);  /* small diff category */
+      v = m;
+      st += 14;
+      while (m >>= 1)
+        if (arith_decode(cinfo, st)) v |= m;
+      v += 1;  if (sign) v = -v;
+      entropy->last_dc_val[ci] = (entropy->last_dc_val[ci] + v) & 0xffff;
+    }
+
+    (*block)[0] = (JCOEF)LEFT_SHIFT(entropy->last_dc_val[ci], cinfo->Al);
+  }
+
+  return TRUE;
+}
+
+METHODDEF(boolean)
+decode_mcu_AC_first(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
+{
+  arith_entropy_ptr entropy = (arith_entropy_ptr)cinfo->entropy;
+  JBLOCKROW block;
+  unsigned char *st;
+  int tbl, sign, k;
+  int v, m;
+
+  if (cinfo->restart_interval) {
+    if (entropy->restarts_to_go == 0)
+      process_restart(cinfo);
+    entropy->restarts_to_go--;
+  }
+
+  if (entropy->ct == -1) return TRUE;   /* if error do nothing */
+
+  block = MCU_data[0];
+  tbl = cinfo->cur_comp_info[0]->ac_tbl_no;
+
+  for (k = cinfo->Ss; k <= cinfo->Se; k++) {
+    st = entropy->ac_stats[tbl] + 3 * (k - 1);
+    if (arith_decode(cinfo, st)) break;         /* EOB flag */
+    while (arith_decode(cinfo, st + 1) == 0) {
+      st += 3;  k++;
+      if (k > cinfo->Se) {
+        WARNMS(cinfo, JWRN_ARITH_BAD_CODE);
+        entropy->ct = -1;                       /* spectral overflow */
+        return TRUE;
+      }
+    }
+    sign = arith_decode(cinfo, entropy->fixed_bin);
+    st += 2;
+    if ((m = arith_decode(cinfo, st)) != 0) {
+      if (arith_decode(cinfo, st)) {
+        m <<= 1;
+        st = entropy->ac_stats[tbl] +
+             (k <= cinfo->arith_ac_K[tbl] ? 189 : 217);
+        while (arith_decode(cinfo, st)) {
+          if ((m <<= 1) == 0x8000) {
+            WARNMS(cinfo, JWRN_ARITH_BAD_CODE);
+            entropy->ct = -1;                   /* magnitude overflow */
+            return TRUE;
+          }
+          st += 1;
+        }
+      }
+    }
+    v = m;
+    st += 14;
+    while (m >>= 1)
+      if (arith_decode(cinfo, st)) v |= m;
+    v += 1;  if (sign) v = -v;
+    (*block)[jpeg_natural_order[k]] = (JCOEF)((unsigned)v << cinfo->Al);
+  }
+
+  return TRUE;
+}
+
+METHODDEF(boolean)
+decode_mcu_DC_refine(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
+{
+  arith_entropy_ptr entropy = (arith_entropy_ptr)cinfo->entropy;
+  unsigned char *st;
+  int p1, blkn;
+
+  if (cinfo->restart_interval) {
+    if (entropy->restarts_to_go == 0)
+      process_restart(cinfo);
+    entropy->restarts_to_go--;
+  }
+
+  st = entropy->fixed_bin;      /* use fixed probability estimation */
+  p1 = 1 << cinfo->Al;          /* 1 in the bit position being coded */
+
+  for (blkn = 0; blkn < cinfo->blocks_in_MCU; blkn++) {
+    if (arith_decode(cinfo, st))
+      MCU_data[blkn][0][0] |= p1;
+  }
+
+  return TRUE;
+}
+
+METHODDEF(boolean)
+decode_mcu_AC_refine(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
+{
+  arith_entropy_ptr entropy = (arith_entropy_ptr)cinfo->entropy;
+  JBLOCKROW block;
+  JCOEFPTR thiscoef;
+  unsigned char *st;
+  int tbl, k, kex;
+  int p1, m1;
+
+  if (cinfo->restart_interval) {
+    if (entropy->restarts_to_go == 0)
+      process_restart(cinfo);
+    entropy->restarts_to_go--;
+  }
+
+  if (entropy->ct == -1) return TRUE;   /* if error do nothing */
+
+  block = MCU_data[0];
+  tbl = cinfo->cur_comp_info[0]->ac_tbl_no;
+
+  p1 = 1 << cinfo->Al;          /* 1 in the bit position being coded */
+  m1 = (NEG_1) << cinfo->Al;    /* -1 in the bit position being coded */
+
+  for (kex = cinfo->Se; kex > 0; kex--)
+    if ((*block)[jpeg_natural_order[kex]]) break;
+
+  for (k = cinfo->Ss; k <= cinfo->Se; k++) {
+    st = entropy->ac_stats[tbl] + 3 * (k - 1);
+    if (k > kex)
+      if (arith_decode(cinfo, st)) break;       /* EOB flag */
+    for (;;) {
+      thiscoef = *block + jpeg_natural_order[k];
+      if (*thiscoef) {                          /* previously nonzero coef */
+        if (arith_decode(cinfo, st + 2)) {
+          if (*thiscoef < 0)
+            *thiscoef += (JCOEF)m1;
+          else
+            *thiscoef += (JCOEF)p1;
+        }
+        break;
+      }
+      if (arith_decode(cinfo, st + 1)) {        /* newly nonzero coef */
+        if (arith_decode(cinfo, entropy->fixed_bin))
+          *thiscoef = (JCOEF)m1;
+        else
+          *thiscoef = (JCOEF)p1;
+        break;
+      }
+      st += 3;  k++;
+      if (k > cinfo->Se) {
+        WARNMS(cinfo, JWRN_ARITH_BAD_CODE);
+        entropy->ct = -1;                       /* spectral overflow */
+        return TRUE;
+      }
+    }
+  }
+
+  return TRUE;
+}
+
+METHODDEF(boolean)
+decode_mcu(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
+{
+  arith_entropy_ptr entropy = (arith_entropy_ptr)cinfo->entropy;
+  jpeg_component_info *compptr;
+  JBLOCKROW block;
+  unsigned char *st;
+  int blkn, ci, tbl, sign, k;
+  int v, m;
+
+  if (cinfo->restart_interval) {
+    if (entropy->restarts_to_go == 0)
+      process_restart(cinfo);
+    entropy->restarts_to_go--;
+  }
+
+  if (entropy->ct == -1) return TRUE;   /* if error do nothing */
+
+  for (blkn = 0; blkn < cinfo->blocks_in_MCU; blkn++) {
+    block = MCU_data ? MCU_data[blkn] : NULL;
+    ci = cinfo->MCU_membership[blkn];
+    compptr = cinfo->cur_comp_info[ci];
+
+    tbl = compptr->dc_tbl_no;
+
+    st = entropy->dc_stats[tbl] + entropy->dc_context[ci];
+
+    if (arith_decode(cinfo, st) == 0)
+      entropy->dc_context[ci] = 0;
+    else {
+      sign = arith_decode(cinfo, st + 1);
+      st += 2;  st += sign;
+      if ((m = arith_decode(cinfo, st)) != 0) {
+        st = entropy->dc_stats[tbl] + 20;       /* Table F.4: X1 = 20 */
+        while (arith_decode(cinfo, st)) {
+          if ((m <<= 1) == 0x8000) {
+            WARNMS(cinfo, JWRN_ARITH_BAD_CODE);
+            entropy->ct = -1;                   /* magnitude overflow */
+            return TRUE;
+          }
+          st += 1;
+        }
+      }
+      if (m < (int)((1L << cinfo->arith_dc_L[tbl]) >> 1))
+        entropy->dc_context[ci] = 0;               /* zero diff category */
+      else if (m > (int)((1L << cinfo->arith_dc_U[tbl]) >> 1))
+        entropy->dc_context[ci] = 12 + (sign * 4); /* large diff category */
+      else
+        entropy->dc_context[ci] = 4 + (sign * 4);  /* small diff category */
+      v = m;
+      st += 14;
+      while (m >>= 1)
+        if (arith_decode(cinfo, st)) v |= m;
+      v += 1;  if (sign) v = -v;
+      entropy->last_dc_val[ci] = (entropy->last_dc_val[ci] + v) & 0xffff;
+    }
+
+    if (block)
+      (*block)[0] = (JCOEF)entropy->last_dc_val[ci];
+
+    tbl = compptr->ac_tbl_no;
+
+    for (k = 1; k <= DCTSIZE2 - 1; k++) {
+      st = entropy->ac_stats[tbl] + 3 * (k - 1);
+      if (arith_decode(cinfo, st)) break;       /* EOB flag */
+      while (arith_decode(cinfo, st + 1) == 0) {
+        st += 3;  k++;
+        if (k > DCTSIZE2 - 1) {
+          WARNMS(cinfo, JWRN_ARITH_BAD_CODE);
+          entropy->ct = -1;                     /* spectral overflow */
+          return TRUE;
+        }
+      }
+      sign = arith_decode(cinfo, entropy->fixed_bin);
+      st += 2;
+      if ((m = arith_decode(cinfo, st)) != 0) {
+        if (arith_decode(cinfo, st)) {
+          m <<= 1;
+          st = entropy->ac_stats[tbl] +
+               (k <= cinfo->arith_ac_K[tbl] ? 189 : 217);
+          while (arith_decode(cinfo, st)) {
+            if ((m <<= 1) == 0x8000) {
+              WARNMS(cinfo, JWRN_ARITH_BAD_CODE);
+              entropy->ct = -1;                 /* magnitude overflow */
+              return TRUE;
+            }
+            st += 1;
+          }
+        }
+      }
+      v = m;
+      st += 14;
+      while (m >>= 1)
+        if (arith_decode(cinfo, st)) v |= m;
+      v += 1;  if (sign) v = -v;
+      if (block)
+        (*block)[jpeg_natural_order[k]] = (JCOEF)v;
+    }
+  }
+
+  return TRUE;
+}
+
+METHODDEF(void)
+start_pass(j_decompress_ptr cinfo)
+{
+  arith_entropy_ptr entropy = (arith_entropy_ptr)cinfo->entropy;
+  int ci, tbl;
+  jpeg_component_info *compptr;
+
+  if (cinfo->progressive_mode) {
+    if (cinfo->Ss == 0) {
+      if (cinfo->Se != 0)
+        goto bad;
+    } else {
+      if (cinfo->Se < cinfo->Ss || cinfo->Se > DCTSIZE2 - 1)
+        goto bad;
+      if (cinfo->comps_in_scan != 1)
+        goto bad;
+    }
+    if (cinfo->Ah != 0) {
+      if (cinfo->Ah - 1 != cinfo->Al)
+        goto bad;
+    }
+    if (cinfo->Al > 13) {       /* need not check for < 0 */
+bad:
+      ERREXIT4(cinfo, JERR_BAD_PROGRESSION,
+               cinfo->Ss, cinfo->Se, cinfo->Ah, cinfo->Al);
+    }
+    for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
+      int coefi, cindex = cinfo->cur_comp_info[ci]->component_index;
+      int *coef_bit_ptr = &cinfo->coef_bits[cindex][0];
+      int *prev_coef_bit_ptr =
+        &cinfo->coef_bits[cindex + cinfo->num_components][0];
+      if (cinfo->Ss && coef_bit_ptr[0] < 0) /* AC without prior DC scan */
+        WARNMS2(cinfo, JWRN_BOGUS_PROGRESSION, cindex, 0);
+      for (coefi = MIN(cinfo->Ss, 1); coefi <= MAX(cinfo->Se, 9); coefi++) {
+        if (cinfo->input_scan_number > 1)
+          prev_coef_bit_ptr[coefi] = coef_bit_ptr[coefi];
+        else
+          prev_coef_bit_ptr[coefi] = 0;
+      }
+      for (coefi = cinfo->Ss; coefi <= cinfo->Se; coefi++) {
+        int expected = (coef_bit_ptr[coefi] < 0) ? 0 : coef_bit_ptr[coefi];
+        if (cinfo->Ah != expected)
+          WARNMS2(cinfo, JWRN_BOGUS_PROGRESSION, cindex, coefi);
+        coef_bit_ptr[coefi] = cinfo->Al;
+      }
+    }
+    if (cinfo->Ah == 0) {
+      if (cinfo->Ss == 0)
+        entropy->pub.decode_mcu = decode_mcu_DC_first;
+      else
+        entropy->pub.decode_mcu = decode_mcu_AC_first;
+    } else {
+      if (cinfo->Ss == 0)
+        entropy->pub.decode_mcu = decode_mcu_DC_refine;
+      else
+        entropy->pub.decode_mcu = decode_mcu_AC_refine;
+    }
+  } else {
+    if (cinfo->Ss != 0 || cinfo->Se != DCTSIZE2 - 1 ||
+        cinfo->Ah != 0 || cinfo->Al != 0)
+      WARNMS(cinfo, JWRN_NOT_SEQUENTIAL);
+    entropy->pub.decode_mcu = decode_mcu;
+  }
+
+  for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
+    compptr = cinfo->cur_comp_info[ci];
+    if (!cinfo->progressive_mode || (cinfo->Ss == 0 && cinfo->Ah == 0)) {
+      tbl = compptr->dc_tbl_no;
+      if (tbl < 0 || tbl >= NUM_ARITH_TBLS)
+        ERREXIT1(cinfo, JERR_NO_ARITH_TABLE, tbl);
+      if (entropy->dc_stats[tbl] == NULL)
+        entropy->dc_stats[tbl] = (unsigned char *)(*cinfo->mem->alloc_small)
+          ((j_common_ptr)cinfo, JPOOL_IMAGE, DC_STAT_BINS);
+      memset(entropy->dc_stats[tbl], 0, DC_STAT_BINS);
+      entropy->last_dc_val[ci] = 0;
+      entropy->dc_context[ci] = 0;
+    }
+    if (!cinfo->progressive_mode || cinfo->Ss) {
+      tbl = compptr->ac_tbl_no;
+      if (tbl < 0 || tbl >= NUM_ARITH_TBLS)
+        ERREXIT1(cinfo, JERR_NO_ARITH_TABLE, tbl);
+      if (entropy->ac_stats[tbl] == NULL)
+        entropy->ac_stats[tbl] = (unsigned char *)(*cinfo->mem->alloc_small)
+          ((j_common_ptr)cinfo, JPOOL_IMAGE, AC_STAT_BINS);
+      memset(entropy->ac_stats[tbl], 0, AC_STAT_BINS);
+    }
+  }
+
+  entropy->c = 0;
+  entropy->a = 0;
+  entropy->ct = -16;
+  entropy->pub.insufficient_data = FALSE;
+
+  entropy->restarts_to_go = cinfo->restart_interval;
+}
+
+GLOBAL(void)
+jinit_arith_decoder(j_decompress_ptr cinfo)
+{
+  arith_entropy_ptr entropy;
+  int i;
+
+  entropy = (arith_entropy_ptr)
+    (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
+                                sizeof(arith_entropy_decoder));
+  cinfo->entropy = (struct jpeg_entropy_decoder *)entropy;
+  entropy->pub.start_pass = start_pass;
+
+  for (i = 0; i < NUM_ARITH_TBLS; i++) {
+    entropy->dc_stats[i] = NULL;
+    entropy->ac_stats[i] = NULL;
+  }
+
+  entropy->fixed_bin[0] = 113;
+
+  if (cinfo->progressive_mode) {
+    int *coef_bit_ptr, ci;
+    cinfo->coef_bits = (int (*)[DCTSIZE2])
+      (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
+                                  cinfo->num_components * 2 * DCTSIZE2 *
+                                  sizeof(int));
+    coef_bit_ptr = &cinfo->coef_bits[0][0];
+    for (ci = 0; ci < cinfo->num_components; ci++)
+      for (i = 0; i < DCTSIZE2; i++)
+        *coef_bit_ptr++ = -1;
+  }
+}
