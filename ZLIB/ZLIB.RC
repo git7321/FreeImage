@@ -1,0 +1,18 @@
+#include <windows.h>
+#include <ntverp.h>
+
+#define VER_FILETYPE             VFT_DLL
+#define VER_FILESUBTYPE          VFT2_UNKNOWN
+#define VER_FILEDESCRIPTION_STR  "ZLIB data compression library"
+
+#ifdef ZLIB_WINAPI
+#define VER_INTERNALNAME_STR      "zlib.dll"
+#else
+#define VER_INTERNALNAME_STR      "zlib1.dll"
+#endif
+#ifdef ZLIB_WINAPI
+#define VER_ORIGINALFILENAME_STR  "zlib.dll"
+#else
+#define VER_ORIGINALFILENAME_STR  "zlib1.dll"
+#endif
+#include <common.ver>

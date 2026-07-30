@@ -1,0 +1,94 @@
+# Makefile for zlib
+# To compile in small model, set below: MODEL=S
+
+# Type for CPU required: 0: 8086, 1: 80186, 2: 80286, 3: 80386, etc.
+CPU_TYP = 0
+
+# Memory model: one of S, M, C, L (small, medium, compact, large)
+MODEL=L
+
+CC=cl
+CFLAGS=-nologo -I. -A$(MODEL) -G$(CPU_TYP) -W3 -Ox -Gs
+LIB_CFLAGS=-Zl $(CFLAGS)
+
+LD=link
+LDFLAGS=/noi/e/st:0x1500/noe/farcall/packcode
+# "/farcall/packcode" are only useful for `large code' memory models
+# but should be a "no-op" for small code models.
+
+OBJ1 = adler32.obj compress.obj crc32.obj deflate.obj gzio.obj infback.obj
+OBJ2 = inffast.obj inflate.obj inftrees.obj trees.obj uncompr.obj zutil.obj
+
+# targets
+all:  zlib.lib example.exe minigzip.exe test
+
+.c.obj:
+	$(CC) -c $(LIB_CFLAGS) $*.c
+
+adler32.obj: adler32.c zlib.h zconf.h
+
+compress.obj: compress.c zlib.h zconf.h
+
+crc32.obj: crc32.c zlib.h zconf.h crc32.h
+
+deflate.obj: deflate.c deflate.h zutil.h zlib.h zconf.h
+
+gzio.obj: gzio.c zutil.h zlib.h zconf.h
+
+infback.obj: infback.c zutil.h zlib.h zconf.h inftrees.h inflate.h \
+ inffast.h inffixed.h
+
+inffast.obj: inffast.c zutil.h zlib.h zconf.h inftrees.h inflate.h \
+ inffast.h
+
+inflate.obj: inflate.c zutil.h zlib.h zconf.h inftrees.h inflate.h \
+ inffast.h inffixed.h
+
+inftrees.obj: inftrees.c zutil.h zlib.h zconf.h inftrees.h
+
+trees.obj: trees.c zutil.h zlib.h zconf.h deflate.h trees.h
+
+uncompr.obj: uncompr.c zlib.h zconf.h
+
+zutil.obj: zutil.c zutil.h zlib.h zconf.h
+
+example.obj: example.c zlib.h zconf.h
+	$(CC) -c $(CFLAGS) $*.c
+
+minigzip.obj: minigzip.c zlib.h zconf.h
+	$(CC) -c $(CFLAGS) $*.c
+
+# the command line is cut to fit in the MS-DOS 128 byte limit:
+zlib.lib: $(OBJ1) $(OBJ2)
+	if exist zlib.lib del zlib.lib
+	lib zlib.lib $(OBJ1);
+	lib zlib.lib $(OBJ2);
+
+example.exe: example.obj zlib.lib
+	$(LD) $(LDFLAGS) example.obj,,,zlib.lib;
+
+minigzip.exe: minigzip.obj zlib.lib
+	$(LD) $(LDFLAGS) minigzip.obj,,,zlib.lib;
+
+test: example.exe minigzip.exe
+	example
+	echo hello world | minigzip | minigzip -d
+
+clean:
+	-del *.res
+	-del *.sbr
+	-del *.obj
+	-del *.lib
+	-del *.dll
+	-del *.exe
+	-del *.map
+	-del *.idb
+	-del *.pdb
+	-del *.ncb
+	-del *.exp
+	-del *.opt
+	-del *.plg
+	-del *.bsc
+	-del *.aps
+	-del *.bak
+	-del foo.gz
