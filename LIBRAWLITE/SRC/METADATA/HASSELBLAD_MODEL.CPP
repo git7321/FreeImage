@@ -38,9 +38,6 @@ const char* LibRaw::HassyRawFormat_idx2HR(unsigned idx) // HR means "human-reada
 }
 
 void LibRaw::process_Hassy_Lens (int LensMount) {
-// long long unsigned id =
-//    mount*100000000ULL + series*10000000ULL +
-//    focal1*10000ULL + focal2*10 + version;
   char *ps;
   int c;
   char *q = strchr(imgdata.lens.Lens, ' ');
@@ -52,24 +49,24 @@ void LibRaw::process_Hassy_Lens (int LensMount) {
 
   if (LensMount == LIBRAW_MOUNT_Hasselblad_H) {
     if (imgdata.lens.Lens[2] == ' ') // HC lens
-      ilm.LensID = LensMount*100000000ULL + 10000000ULL;
+      ilm.LensID = LensMount*100000000UI64 + 10000000UI64;
     else                             // HCD lens
-      ilm.LensID = LensMount*100000000ULL + 20000000ULL;
+      ilm.LensID = LensMount*100000000UI64 + 20000000UI64;
     ilm.LensFormat = LIBRAW_FORMAT_645;
   } else if (LensMount == LIBRAW_MOUNT_Hasselblad_XCD) {
     ilm.LensFormat = LIBRAW_FORMAT_CROP645;
-    ilm.LensID = LensMount*100000000ULL;
+    ilm.LensID = LensMount*100000000UI64;
   } else
     return;
 
   ilm.LensMount = LensMount;
-  ilm.LensID += c*10000ULL;
+  ilm.LensID += c*10000UI64;
   if ((ps=strchr(imgdata.lens.Lens, '-'))) {
     ilm.FocalType = LIBRAW_FT_ZOOM_LENS;
-    ilm.LensID += atoi(ps+1)*10ULL;
+    ilm.LensID += atoi(ps+1)*10UI64;
   } else {
     ilm.FocalType = LIBRAW_FT_PRIME_LENS;
-    ilm.LensID += c*10ULL;
+    ilm.LensID += c*10UI64;
   }
   if (strstr(imgdata.lens.Lens, "III"))
     ilm.LensID += 3ULL;
@@ -543,20 +540,17 @@ static const char *Hasselblad_SensorEnclosures[] = {
         ilm.LensID = uint64_t(focal_len);
         if (ilm.LensID == 35) {
           ilm.FocalType = LIBRAW_FT_ZOOM_LENS;
-          ilm.LensID = LIBRAW_MOUNT_Hasselblad_XCD*100000000ULL +
-                       35*10000ULL + 75*10;
+          ilm.LensID = LIBRAW_MOUNT_Hasselblad_XCD*100000000UI64 +
+                       35*10000UI64 + 75*10;
         }
         else {
           ilm.FocalType = LIBRAW_FT_PRIME_LENS;
-          ilm.LensID = LIBRAW_MOUNT_Hasselblad_XCD*100000000ULL +
-                       ilm.LensID*10000ULL + ilm.LensID*10;
+          ilm.LensID = LIBRAW_MOUNT_Hasselblad_XCD*100000000UI64 +
+                       ilm.LensID*10000UI64 + ilm.LensID*10;
         }
       }
     }
   }
-// printf (">>Host Body: =%s= CaptureSequenceInitiator: =%s=\n", imHassy.HostBody, imHassy.CaptureSequenceInitiator);
-// printf (">> SensorCode: %d, CoatingCode: %d, Sensor: =%s=\n", imHassy.SensorCode, imHassy.CoatingCode, imHassy.Sensor);
-// printf (">> raw_width: %d, raw_height: %d\n", raw_width, raw_height);
 
   if (normalized_model[0]  && !CM_found)
     CM_found = adobe_coeff(maker_index, normalized_model);

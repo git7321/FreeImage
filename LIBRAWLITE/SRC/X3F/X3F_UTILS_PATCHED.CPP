@@ -50,9 +50,9 @@ BSD-style License
 
 static void *x3f_limited_malloc(UINT64 sz)
 {
-  if (sz > LIBRAW_X3F_ALLOC_LIMIT_MB * 1024ULL * 1024ULL)
+  if (sz > LIBRAW_X3F_ALLOC_LIMIT_MB * 1024UI64 * 1024UI64)
     throw LIBRAW_EXCEPTION_TOOBIG;
-  void *ret = malloc(sz);
+  void *ret = malloc((size_t)sz);
   if (!ret)
     throw LIBRAW_EXCEPTION_ALLOC;
   return ret;
@@ -60,9 +60,9 @@ static void *x3f_limited_malloc(UINT64 sz)
 
 static void *x3f_limited_calloc(UINT64 n, UINT64 sz)
 {
-  if (sz * n > LIBRAW_X3F_ALLOC_LIMIT_MB * 1024ULL * 1024ULL)
+  if (sz * n > LIBRAW_X3F_ALLOC_LIMIT_MB * 1024UI64 * 1024UI64)
     throw LIBRAW_EXCEPTION_TOOBIG;
-  void *ret = calloc(n, sz);
+  void *ret = calloc((size_t)n, (size_t)sz);
   if (!ret)
     throw LIBRAW_EXCEPTION_ALLOC;
   return ret;
@@ -70,18 +70,16 @@ static void *x3f_limited_calloc(UINT64 n, UINT64 sz)
 
 static void *x3f_limited_realloc(void *ptr, UINT64 sz)
 {
-  if (sz > LIBRAW_X3F_ALLOC_LIMIT_MB * 1024ULL * 1024ULL)
+  if (sz > LIBRAW_X3F_ALLOC_LIMIT_MB * 1024UI64 * 1024UI64)
     throw LIBRAW_EXCEPTION_TOOBIG;
-  void *ret = realloc(ptr, sz);
+  void *ret = realloc(ptr, (size_t)sz);
   if (!ret)
     throw LIBRAW_EXCEPTION_ALLOC;
   return ret;
 }
 
-
 static int x3f_get1(LibRaw_abstract_datastream *f)
 {
-  /* Little endian file */
   return f->get_char();
 }
 

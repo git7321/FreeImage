@@ -181,7 +181,7 @@ public:
     buffer_t() : std::vector<unsigned char>(LibRaw_bufio_params::bufsize), _bstart(0), _bend(0) {}
     int charOReof(INT64 _fpos)
     {
-        if (_bstart < 0LL || _bend < 0LL || _bend < _bstart || _fpos < 0LL)  
+        if (_bstart < 0I64 || _bend < 0I64 || _bend < _bstart || _fpos < 0I64)  
             return -1;
         if ((_bend - _bstart) > (INT64)size()) 
             return -1;
@@ -191,7 +191,7 @@ public:
     }
     bool contains(INT64 _fpos, INT64& contains)
     {
-        if (_bstart < 0LL || _bend < 0LL || _bend < _bstart || _fpos < 0LL)
+        if (_bstart < 0I64 || _bend < 0I64 || _bend < _bstart || _fpos < 0I64)
         {
             contains = 0;
             return false;

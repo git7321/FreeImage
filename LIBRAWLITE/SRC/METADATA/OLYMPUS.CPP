@@ -22,7 +22,7 @@ void LibRaw::setOlympusBodyFeatures(unsigned long long id)
   if ((id == OlyID_E_1)      ||
       (id == OlyID_E_300)    ||
       (id == OlyID_AIR_A01)  ||
-      ((id & 0xffff000000ULL) == 0x5330000000ULL))
+      ((id & 0xffff000000UI64) == 0x5330000000UI64))
   {
     ilm.CameraFormat = LIBRAW_FORMAT_FT;
 
@@ -71,7 +71,7 @@ void LibRaw::setOlympusBodyFeatures(unsigned long long id)
 void LibRaw::getOlympus_CameraType2()
 {
 
-  if (OlyID != 0x0ULL)
+  if (OlyID != 0x0UI64)
     return;
 
   int i = 0;
@@ -88,7 +88,7 @@ void LibRaw::getOlympus_CameraType2()
   }
   if (OlyID == OlyID_NORMA) {
     if (strcmp(model, "SP510UZ")) OlyID = OlyID_SP_510UZ;
-    else OlyID = 0x0ULL;
+    else OlyID = 0x0UI64;
   }
   unique_id = OlyID;
   setOlympusBodyFeatures(OlyID);
@@ -97,7 +97,7 @@ void LibRaw::getOlympus_CameraType2()
 
 void LibRaw::getOlympus_SensorTemperature(unsigned len)
 {
-  if (OlyID != 0x0ULL)
+  if (OlyID != 0x0UI64)
   {
     short temp = get2();
     if ((OlyID == OlyID_E_1)  ||
@@ -153,10 +153,10 @@ void LibRaw::parseOlympus_Equipment(unsigned tag, unsigned /*type */, unsigned l
     stmread(ilm.Lens, len, ifp);
     break;
   case 0x0205:
-    ilm.MaxAp4MinFocal = libraw_powf64l(sqrt(2.0f), get2() / 256.0f);
+    ilm.MaxAp4MinFocal = libraw_powf64l((float)sqrt(2.0f), get2() / 256.0f);
     break;
   case 0x0206:
-    ilm.MaxAp4MaxFocal = libraw_powf64l(sqrt(2.0f), get2() / 256.0f);
+    ilm.MaxAp4MaxFocal = libraw_powf64l((float)sqrt(2.0f), get2() / 256.0f);
     break;
   case 0x0207:
     ilm.MinFocal = (float)get2();
@@ -167,7 +167,7 @@ void LibRaw::parseOlympus_Equipment(unsigned tag, unsigned /*type */, unsigned l
       ilm.MaxFocal = ilm.MinFocal;
     break;
   case 0x020a:
-    ilm.MaxAp4CurFocal = libraw_powf64l(sqrt(2.0f), get2() / 256.0f);
+    ilm.MaxAp4CurFocal = libraw_powf64l((float)sqrt(2.0f), get2() / 256.0f);
     break;
   case 0x0301:
     ilm.TeleconverterID = fgetc(ifp) << 8;

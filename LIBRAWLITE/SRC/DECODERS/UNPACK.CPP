@@ -54,11 +54,7 @@ int LibRaw::unpack(void)
         throw LIBRAW_EXCEPTION_TOOBIG;
 
       libraw_internal_data.internal_data.meta_data =
-#ifdef LIBRAW_CALLOC_RAWSTORE
           (char *)calloc(1, libraw_internal_data.unpacker_data.meta_length);
-#else
-          (char *)malloc(libraw_internal_data.unpacker_data.meta_length);
-#endif
     }
 
     libraw_decoder_info_t decoder_info;
@@ -330,12 +326,7 @@ int LibRaw::unpack(void)
 				+ +INT64(libraw_internal_data.unpacker_data.meta_length) >
               INT64(imgdata.rawparams.max_raw_memory_mb) * INT64(1024 * 1024))
             throw LIBRAW_EXCEPTION_TOOBIG;
-#ifdef LIBRAW_CALLOC_RAWSTORE
           imgdata.rawdata.raw_alloc = calloc(size_t(rwidth) * (size_t(rheight) + 8), sizeof(imgdata.rawdata.raw_image[0]));
-#else
-          imgdata.rawdata.raw_alloc = malloc(
-              size_t(rwidth) * (size_t(rheight) + 8) * sizeof(imgdata.rawdata.raw_image[0]));
-#endif
           imgdata.rawdata.raw_image = (ushort *)imgdata.rawdata.raw_alloc;
           if (!S.raw_pitch)
             S.raw_pitch = S.raw_width * 2; // Bayer case, not set before
@@ -349,15 +340,10 @@ int LibRaw::unpack(void)
             throw LIBRAW_EXCEPTION_TOOBIG;
           S.raw_pitch = S.raw_width * 8;
           imgdata.rawdata.raw_alloc = 0;
-#ifdef LIBRAW_CALLOC_RAWSTORE
           imgdata.image = (ushort(*)[4])calloc(
               size_t(MAX(S.width, S.raw_width)) *
                   (size_t(MAX(S.height, S.raw_height)) + 8),
               sizeof(*imgdata.image));
-#else
-          imgdata.image = (ushort(*)[4])malloc(
-              size_t(MAX(S.width, S.raw_width)) * (size_t(MAX(S.height, S.raw_height)) + 8) * sizeof(*imgdata.image));
-#endif
         }
       }
       else if (decoder_info.decoder_flags & LIBRAW_DECODER_3CHANNEL)
@@ -368,39 +354,28 @@ int LibRaw::unpack(void)
             INT64(imgdata.rawparams.max_raw_memory_mb) * INT64(1024 * 1024))
           throw LIBRAW_EXCEPTION_TOOBIG;
 
-#ifdef LIBRAW_CALLOC_RAWSTORE
         imgdata.rawdata.raw_alloc =
             calloc(size_t(rwidth) * (size_t(rheight) + 8), sizeof(imgdata.rawdata.raw_image[0]) * 3);
-#else
-        imgdata.rawdata.raw_alloc = malloc(
-            size_t(rwidth) * (size_t(rheight) + 8) * sizeof(imgdata.rawdata.raw_image[0]) * 3);
-#endif
         imgdata.rawdata.color3_image = (ushort(*)[3])imgdata.rawdata.raw_alloc;
         if (!S.raw_pitch)
           S.raw_pitch = S.raw_width * 6;
       }
       else if (imgdata.idata.filters ||
                P1.colors ==
-                   1) // Bayer image or single color -> decode to raw_image
+                   1)
       {
         if (INT64(rwidth) * INT64(rheight + 8) *
                 INT64(sizeof(imgdata.rawdata.raw_image[0])) 
 			+ INT64(libraw_internal_data.unpacker_data.meta_length) >
             INT64(imgdata.rawparams.max_raw_memory_mb) * INT64(1024 * 1024))
           throw LIBRAW_EXCEPTION_TOOBIG;
-#ifdef LIBRAW_CALLOC_RAWSTORE
         imgdata.rawdata.raw_alloc =
             calloc(size_t(rwidth) * (size_t(rheight) + 8),sizeof(imgdata.rawdata.raw_image[0]));
-#else
-        imgdata.rawdata.raw_alloc = malloc(
-            size_t(rwidth) * (size_t(rheight) + 8) * sizeof(imgdata.rawdata.raw_image[0]));
-#endif
         imgdata.rawdata.raw_image = (ushort *)imgdata.rawdata.raw_alloc;
         if (!S.raw_pitch)
-          S.raw_pitch = S.raw_width * 2; // Bayer case, not set before
+          S.raw_pitch = S.raw_width * 2;
       }
-      else // NO LEGACY FLAG if (decoder_info.decoder_flags &
-           // LIBRAW_DECODER_LEGACY)
+      else
       {
         if (decoder_info.decoder_flags & LIBRAW_DECODER_ADOBECOPYPIXEL)
         {
@@ -417,8 +392,6 @@ int LibRaw::unpack(void)
                               ? S.raw_width * 8
                               : S.width * 8;
         }
-        // sRAW and old Foveon decoders only, so extra buffer size is just 1/4
-        // allocate image as temporary buffer, size
         if (INT64(MAX(S.width, S.raw_width)) *
                 INT64(MAX(S.height, S.raw_height) + 8) *
                 INT64(sizeof(*imgdata.image)) 
@@ -453,7 +426,6 @@ int LibRaw::unpack(void)
         C.maximum = m_save;
       if (decoder_info.decoder_flags & LIBRAW_DECODER_OWNALLOC)
       {
-        // x3f foveon decoder only: do nothing
       }
       else if (decoder_info.decoder_flags & LIBRAW_DECODER_SINAR4SHOT &&
                imgdata.rawparams.shot_select == 0)
@@ -463,14 +435,11 @@ int LibRaw::unpack(void)
         imgdata.image = 0;
       }
       else if (!(imgdata.idata.filters ||
-                 P1.colors == 1)) // legacy decoder, ownalloc handled above
+                 P1.colors == 1))
       {
-        // successfully decoded legacy image, attach image to raw_alloc
         imgdata.rawdata.raw_alloc = imgdata.image;
         imgdata.rawdata.color4_image = (ushort(*)[4])imgdata.rawdata.raw_alloc;
         imgdata.image = 0;
-        // Restore saved values. Note: Foveon have masked frame
-        // Other 4-color legacy data: no borders
         if (!(libraw_internal_data.unpacker_data.load_flags & 256) &&
             !(decoder_info.decoder_flags & LIBRAW_DECODER_ADOBECOPYPIXEL) &&
             !(decoder_info.decoder_flags & LIBRAW_DECODER_LEGACY_WITH_MARGINS))
@@ -484,14 +453,12 @@ int LibRaw::unpack(void)
     }
 
     if (imgdata.rawdata.raw_image)
-      crop_masked_pixels(); // calculate black levels
+      crop_masked_pixels();
 
-    // recover image sizes
     S.iwidth = save_iwidth;
     S.iheight = save_iheight;
     IO.shrink = save_shrink;
 
-    // adjust black to possible maximum
     unsigned int i = C.cblack[3];
     unsigned int c;
     for (c = 0; c < 3; c++)
@@ -501,7 +468,6 @@ int LibRaw::unpack(void)
       C.cblack[c] -= i;
     C.black += i;
 
-    // Save color,sizes and internal data into raw_image fields
     memmove(&imgdata.rawdata.color, &imgdata.color, sizeof(imgdata.color));
     memmove(&imgdata.rawdata.sizes, &imgdata.sizes, sizeof(imgdata.sizes));
     memmove(&imgdata.rawdata.iparams, &imgdata.idata, sizeof(imgdata.idata));

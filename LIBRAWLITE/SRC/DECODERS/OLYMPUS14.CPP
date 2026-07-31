@@ -118,7 +118,7 @@ void skip_bit(uint32_t &vbits)
 static bool checkhdr(LibRaw_abstract_datastream *ifp, int bytes)
 {
 	if (bytes <= 0) return false;
-	uint64_t b64 = 0ULL;
+	uint64_t b64 = 0UI64;
 	for(int i = 0; i < bytes; i++)
     {
       uint8_t databyte1 = (uint8_t)ifp->get_char();

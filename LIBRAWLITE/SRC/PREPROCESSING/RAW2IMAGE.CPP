@@ -17,7 +17,6 @@
 
 void LibRaw::raw2image_start()
 {
-  // restore color,sizes and internal data into raw_image fields
   memmove(&imgdata.color, &imgdata.rawdata.color, sizeof(imgdata.color));
   memmove(&imgdata.sizes, &imgdata.rawdata.sizes, sizeof(imgdata.sizes));
   memmove(&imgdata.idata, &imgdata.rawdata.iparams, sizeof(imgdata.idata));
@@ -45,7 +44,6 @@ void LibRaw::raw2image_start()
     if (O.aber[c] < 0.001 || O.aber[c] > 1000.f)
       O.aber[c] = 1.0;
 
-  // adjust for half mode!
   IO.shrink =
 	  !imgdata.rawdata.color4_image && !imgdata.rawdata.color3_image &&
 	  !imgdata.rawdata.float4_image && !imgdata.rawdata.float3_image &&
@@ -84,27 +82,23 @@ int LibRaw::raw2image(void)
       }
     }
 
-    // free and re-allocate image bitmap
-	int extra = P1.filters ? (P1.filters == 9 ? 6 : 2) : 0;
+	INT64 extra = P1.filters ? (P1.filters == 9 ? 6I64 : 2I64) : 0I64;
+	INT64 allocate_sz = (INT64(S.iheight) + extra) * (INT64(S.iwidth) + extra);
     if (imgdata.image)
     {
-      imgdata.image = (ushort(*)[4])realloc(
-          imgdata.image, (S.iheight+extra) * (S.iwidth+extra) * sizeof(*imgdata.image));
-      memset(imgdata.image, 0, (S.iheight+extra) * (S.iwidth+extra) * sizeof(*imgdata.image));
+      imgdata.image = (ushort(*)[4])realloc(imgdata.image, (size_t)(allocate_sz * sizeof(*imgdata.image)));
+      memset(imgdata.image, 0, (size_t)(allocate_sz * sizeof(*imgdata.image)));
     }
     else
       imgdata.image =
-          (ushort(*)[4])calloc((S.iheight+extra) * (S.iwidth+extra), sizeof(*imgdata.image));
-
+          (ushort(*)[4])calloc((size_t)allocate_sz, sizeof(*imgdata.image));
 
     libraw_decoder_info_t decoder_info;
     get_decoder_info(&decoder_info);
 
-    // Copy area size
     int copyheight = MAX(0, MIN(int(S.height), int(S.raw_height) - int(S.top_margin)));
     int copywidth = MAX(0, MIN(int(S.width), int(S.raw_width) - int(S.left_margin)));
 
-    // Move saved bitmap to imgdata.image
     if ((imgdata.idata.filters || P1.colors == 1) && imgdata.rawdata.raw_image)
     {
       if (IO.fuji_width)
@@ -149,7 +143,7 @@ int LibRaw::raw2image(void)
                                (col + S.left_margin)];
       }
     }
-    else // if(decoder_info.decoder_flags & LIBRAW_DECODER_LEGACY)
+    else
     {
       if (imgdata.rawdata.color4_image)
       {
@@ -184,17 +178,14 @@ int LibRaw::raw2image(void)
       }
       else
       {
-        // legacy decoder, but no data?
         throw LIBRAW_EXCEPTION_DECODE_RAW;
       }
     }
 
-    // Free PhaseOne separate copy allocated at function start
     if (free_p1_buffer)
     {
       phase_one_free_tempbuffer();
     }
-    // hack - clear later flags!
 
     if (load_raw == &LibRaw::canon_600_load_raw && S.width < S.raw_width)
     {
@@ -273,7 +264,6 @@ void LibRaw::copy_fuji_uncropped(unsigned short cblack[4],
 
 void LibRaw::copy_bayer(unsigned short cblack[4], unsigned short *dmaxp)
 {
-  // Both cropped and uncropped
   int maxHeight = MIN(int(S.height),int(S.raw_height)-int(S.top_margin));
 #if defined(LIBRAW_USE_OPENMP)
 #pragma omp parallel for schedule(dynamic) default(none) shared(dmaxp) firstprivate(cblack, maxHeight)
@@ -320,7 +310,6 @@ int LibRaw::raw2image_ex(int do_subtract_black)
     raw2image_start();
 	bool free_p1_buffer = false;
 
-    // Compressed P1 files with bl data!
     if (is_phaseone_compressed() && (imgdata.rawdata.raw_alloc || (imgdata.process_warnings & LIBRAW_WARN_RAWSPEED3_PROCESSED)))
     {
       phase_one_allocate_tempbuffer();
@@ -336,7 +325,6 @@ int LibRaw::raw2image_ex(int do_subtract_black)
       }
     }
 
-    // process cropping
     int do_crop = 0;
     if (~O.cropbox[2] && ~O.cropbox[3])
     {
@@ -377,7 +365,6 @@ int LibRaw::raw2image_ex(int do_subtract_black)
       if (crop[2] <= 0 || crop[3] <= 0)
         throw LIBRAW_EXCEPTION_BAD_CROP;
 
-      // adjust sizes!
       S.left_margin += crop[0];
       S.top_margin += crop[1];
       S.width = crop[2];
@@ -407,21 +394,20 @@ int LibRaw::raw2image_ex(int do_subtract_black)
       alloc_height = (t_alloc_height + IO.shrink) >> IO.shrink;
       alloc_width = (t_alloc_width + IO.shrink) >> IO.shrink;
     }
-    int alloc_sz = alloc_width * alloc_height;
+    INT64 alloc_sz = INT64(alloc_width) * INT64(alloc_height);
 
     if (imgdata.image)
     {
       imgdata.image = (ushort(*)[4])realloc(imgdata.image,
-                                            alloc_sz * sizeof(*imgdata.image));
-      memset(imgdata.image, 0, alloc_sz * sizeof(*imgdata.image));
+                                            (size_t)(alloc_sz * sizeof(*imgdata.image)));
+      memset(imgdata.image, 0, (size_t)(alloc_sz * sizeof(*imgdata.image)));
     }
     else
-      imgdata.image = (ushort(*)[4])calloc(alloc_sz, sizeof(*imgdata.image));
+      imgdata.image = (ushort(*)[4])calloc((size_t)alloc_sz, sizeof(*imgdata.image));
 
     libraw_decoder_info_t decoder_info;
     get_decoder_info(&decoder_info);
 
-    // Adjust black levels
     unsigned short cblack[4] = {0, 0, 0, 0};
     unsigned short dmax = 0;
     if (do_subtract_black)
@@ -431,11 +417,9 @@ int LibRaw::raw2image_ex(int do_subtract_black)
         cblack[i] = (unsigned short)C.cblack[i];
     }
 
-    // Max area size to definitely not overrun in/out buffers
     int copyheight = MAX(0, MIN(int(S.height), int(S.raw_height) - int(S.top_margin)));
     int copywidth = MAX(0, MIN(int(S.width), int(S.raw_width) - int(S.left_margin)));
 
-    // Move saved bitmap to imgdata.image
     if ((imgdata.idata.filters || P1.colors == 1) && imgdata.rawdata.raw_image)
     {
       if (IO.fuji_width)
@@ -493,13 +477,13 @@ int LibRaw::raw2image_ex(int do_subtract_black)
         {
           copy_fuji_uncropped(cblack, &dmax);
         }
-      } // end Fuji
+      }
       else
       {
         copy_bayer(cblack, &dmax);
       }
     }
-    else // if(decoder_info.decoder_flags & LIBRAW_DECODER_LEGACY)
+    else
     {
       if (imgdata.rawdata.color4_image)
       {
@@ -514,7 +498,6 @@ int LibRaw::raw2image_ex(int do_subtract_black)
           }
           else
           {
-              // legacy is always 4channel and not shrinked!
               memmove(imgdata.image, imgdata.rawdata.color4_image,
                   S.width*copyheight * sizeof(*imgdata.image));
           }
@@ -537,12 +520,10 @@ int LibRaw::raw2image_ex(int do_subtract_black)
       }
       else
       {
-        // legacy decoder, but no data?
         throw LIBRAW_EXCEPTION_DECODE_RAW;
       }
     }
 
-    // Free PhaseOne separate copy allocated at function start
     if (free_p1_buffer)
     {
       phase_one_free_tempbuffer();
@@ -556,12 +537,10 @@ int LibRaw::raw2image_ex(int do_subtract_black)
     {
       C.data_maximum = (int)dmax;
       C.maximum -= C.black;
-      //        ZERO(C.cblack);
       C.cblack[0] = C.cblack[1] = C.cblack[2] = C.cblack[3] = 0;
       C.black = 0;
     }
 
-    // hack - clear later flags!
     imgdata.progress_flags =
         LIBRAW_PROGRESS_START | LIBRAW_PROGRESS_OPEN |
         LIBRAW_PROGRESS_RAW2_IMAGE | LIBRAW_PROGRESS_IDENTIFY |

@@ -19,7 +19,7 @@ libraw_processed_image_t *LibRaw::dcraw_make_mem_thumb(int *errcode)
   if (!T.thumb)
   {
     if (!ID.toffset && !(imgdata.thumbnail.tlength > 0 &&
-                         load_raw == &LibRaw::broadcom_load_raw) // RPi
+                         load_raw == &LibRaw::broadcom_load_raw)
     )
     {
       if (errcode)
@@ -66,7 +66,7 @@ libraw_processed_image_t *LibRaw::dcraw_make_mem_thumb(int *errcode)
     if (T.tcolors > 0 && T.tcolors < 4)
         ret->colors = T.tcolors;
     else
-        ret->colors = 3; // defaults
+        ret->colors = 3;
     ret->bits = 8;
     ret->data_size = T.tlength;
     memmove(ret->data, T.thumb, T.tlength);
@@ -78,7 +78,7 @@ libraw_processed_image_t *LibRaw::dcraw_make_mem_thumb(int *errcode)
   {
     ushort exif[5];
     int mk_exif = 0;
-    if (strcmp(T.thumb + 6, "Exif"))
+    if (memcmp(T.thumb + 6, "Exif\0",5))
       mk_exif = 1;
 
     int dsize = T.tlength + mk_exif * (sizeof(exif) + sizeof(tiff_hdr));
@@ -145,8 +145,6 @@ libraw_processed_image_t *LibRaw::dcraw_make_mem_thumb(int *errcode)
   }
 }
 
-// jlb
-// macros for copying pixels to either BGR or RGB formats
 #define FORBGR for (c = P1.colors - 1; c >= 0; c--)
 #define FORRGB for (c = 0; c < P1.colors; c++)
 
@@ -186,8 +184,6 @@ void LibRaw::get_mem_image_format(int *width, int *height, int *colors,
 int LibRaw::copy_mem_image(void *scan0, int stride, int bgr)
 
 {
-  // the image memory pointed to by scan0 is assumed to be in the format
-  // returned by get_mem_image_format
   if ((imgdata.progress_flags & LIBRAW_PROGRESS_THUMB_MASK) <
       LIBRAW_PROGRESS_PRE_INTERPOLATE)
     return LIBRAW_OUT_OF_ORDER_CALL;
@@ -231,9 +227,8 @@ int LibRaw::copy_mem_image(void *scan0, int stride, int bgr)
 
   for (row = 0; row < S.height; row++, soff += rstep)
   {
-    uchar *bufp = ((uchar *)scan0) + row * stride;
+    uchar *bufp = ((uchar *)scan0) + size_t(row) * size_t(stride);
     ppm2 = (ushort *)(ppm = bufp);
-    // keep trivial decisions in the outer loop for speed
     if (bgr)
     {
       if (O.output_bps == 8)
@@ -260,8 +255,6 @@ int LibRaw::copy_mem_image(void *scan0, int stride, int bgr)
           FORRGB *ppm2++ = imgdata.color.curve[imgdata.image[soff][c]];
       }
     }
-
-    //            bufp += stride;           // go to the next line
   }
 
   S.iheight = s_iheight;
@@ -280,7 +273,7 @@ libraw_processed_image_t *LibRaw::dcraw_make_mem_image(int *errcode)
   int width, height, colors, bps;
   get_mem_image_format(&width, &height, &colors, &bps);
   int stride = width * (bps / 8) * colors;
-  unsigned ds = height * stride;
+  INT64 ds = INT64(height) * INT64(stride);
   libraw_processed_image_t *ret = (libraw_processed_image_t *)::malloc(
       sizeof(libraw_processed_image_t) + ds);
   if (!ret)
@@ -291,13 +284,12 @@ libraw_processed_image_t *LibRaw::dcraw_make_mem_image(int *errcode)
   }
   memset(ret, 0, sizeof(libraw_processed_image_t));
 
-  // metadata init
   ret->type = LIBRAW_IMAGE_BITMAP;
   ret->height = height;
   ret->width = width;
   ret->colors = colors;
   ret->bits = bps;
-  ret->data_size = ds;
+  ret->data_size = (size_t)ds;
   copy_mem_image(ret->data, stride, 0);
 
   return ret;

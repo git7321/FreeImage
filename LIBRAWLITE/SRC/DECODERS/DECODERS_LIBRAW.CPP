@@ -58,21 +58,12 @@ void LibRaw::pentax_4shot_load_raw()
   if (INT64(alloc_sz) > INT64(imgdata.rawparams.max_raw_memory_mb) * INT64(1024 * 1024))
     throw LIBRAW_EXCEPTION_TOOBIG;
 
-#ifdef LIBRAW_CALLOC_RAWSTORE
   ushort *plane = (ushort *)calloc(size_t(imgdata.sizes.raw_width) * size_t(imgdata.sizes.raw_height), sizeof(ushort));
-#else
-  ushort *plane = (ushort *)malloc(size_t(imgdata.sizes.raw_width) *
-                                   size_t(imgdata.sizes.raw_height) * sizeof(ushort));
-#endif
 
   if (!plane)
     throw LIBRAW_EXCEPTION_ALLOC;
 
-#ifdef LIBRAW_CALLOC_RAWSTORE
   ushort(*result)[4] = (ushort(*)[4])calloc(1, alloc_sz);
-#else
-  ushort(*result)[4] = (ushort(*)[4])malloc(alloc_sz);
-#endif
   if(!result)
     throw LIBRAW_EXCEPTION_ALLOC;
 

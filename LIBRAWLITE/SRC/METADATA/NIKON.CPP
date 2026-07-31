@@ -592,7 +592,7 @@ uchar *cj_block, *ck_block;
     }
     else if (tag == 0x0051)
     {
-      fseek(ifp, 10LL, SEEK_CUR);
+      fseek(ifp, 10I64, SEEK_CUR);
       imNikon.NEFCompression = get2();
     }
 
@@ -1001,8 +1001,8 @@ free(ck_block);
               unsigned long long lng;
             } un;
             un.dbl = getreal(LIBRAW_EXIFTAG_TYPE_DOUBLE);
-            if ((un.lng != 0x3FF0000000000000ULL) &&
-                (un.lng != 0x000000000000F03FULL))
+            if ((un.lng != 0x3FF0000000000000UI64) &&
+                (un.lng != 0x000000000000F03FUI64))
             {
               cam_mul[0] = float(un.dbl);
               cam_mul[2] = getrealf(LIBRAW_EXIFTAG_TYPE_DOUBLE);

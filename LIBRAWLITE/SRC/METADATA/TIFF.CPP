@@ -2183,7 +2183,7 @@ void LibRaw::apply_tiff()
 		// Allow A1/Compression=7
 		else if(!dng_version && tiff_compress == 7 && !strcasecmp(make, "SONY") &&
 			(!strcasecmp(model,"ILCE-1") || !strncasecmp(model, "ILCE-7",6)
-				|| !strncasecmp(model, "ILCE-9", 6) // Most likely ILCE-9 will use tiff_compr=7 this w/ updated FW
+				|| !strncasecmp(model, "ILCE-9", 6)
 				) &&
 			tiff_bps == 14 && tiff_samples == 1)
           load_raw = &LibRaw::sony_ljpeg_load_raw;
@@ -2194,7 +2194,7 @@ void LibRaw::apply_tiff()
       load_raw = &LibRaw::kodak_262_load_raw;
       break;
     case 34713:
-      if ((INT64(raw_width) + 9LL) / 10LL * 16LL * INT64(raw_height) == tiff_ifd[raw].bytes)
+      if ((INT64(raw_width) + 9I64) / 10I64 * 16I64 * INT64(raw_height) == tiff_ifd[raw].bytes)
       {
         load_raw = &LibRaw::packed_load_raw;
         load_flags = 1;
@@ -2218,14 +2218,6 @@ void LibRaw::apply_tiff()
         load_flags = 4;
         order = 0x4d4d;
       }
-#if 0 /* Never used because of same condition above, but need to recheck */
-      else if (INT64(raw_width) * INT64(raw_height) * 3LL ==
-               INT64(tiff_ifd[raw].bytes) * 2LL)
-      {
-        load_raw = &LibRaw::packed_load_raw;
-        load_flags = 80;
-      }
-#endif
       else if (tiff_ifd[raw].rows_per_strip &&
                tiff_ifd[raw].strip_offsets_count &&
                tiff_ifd[raw].strip_offsets_count ==
@@ -2319,7 +2311,7 @@ void LibRaw::apply_tiff()
           is_raw = 0; // SKIP RGB+Alpha IFDs
   }
 
-  INT64 fsizecheck = 0ULL;
+  INT64 fsizecheck = 0UI64;
 
   if (imgdata.rawparams.options & LIBRAW_RAWOPTIONS_CHECK_THUMBNAILS_ALL_VENDORS)
       fsizecheck = ifp->size();
@@ -2338,7 +2330,7 @@ void LibRaw::apply_tiff()
         unsigned(tiff_ifd[i].t_width | tiff_ifd[i].t_height) < 0x10000 &&
         tiff_ifd[i].comp != 34892)
     {
-        if (fsizecheck > 0LL)
+        if (fsizecheck > 0I64)
         {
             bool ok = true;
             if (tiff_ifd[i].strip_byte_counts_count && tiff_ifd[i].strip_offsets_count)

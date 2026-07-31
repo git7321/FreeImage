@@ -458,7 +458,7 @@ void LibRaw::identify()
   maximum = height = width = top_margin = left_margin = 0;
   cdesc[0] = desc[0] = artist[0] = make[0] = model[0] = model2[0] = 0;
   iso_speed = shutter = aperture = focal_len = 0;
-  unique_id = 0ULL;
+  unique_id = 0UI64;
   tiff_nifds = 0;
   is_NikonTransfer = 0;
   is_Olympus = 0;
@@ -704,7 +704,7 @@ void LibRaw::identify()
     strcpy(make, "Canon");
 
     szAtomList = ifp->size();
-    err = parseCR3(0ULL, szAtomList, nesting, AtomNameStack, nTrack, TrackType,szAtomList);
+    err = parseCR3(0UI64, szAtomList, nesting, AtomNameStack, nTrack, TrackType,szAtomList);
     libraw_internal_data.unpacker_data.crx_track_count = nTrack;
     if ((err == 0 || err == -14) &&
         nTrack >= 0) // no error, or too deep nesting
@@ -787,7 +787,7 @@ void LibRaw::identify()
       }
   if (zero_fsize)
     fsize = 0;
-  if (make[0] == 0 && fsize < 25000000LL)
+  if (make[0] == 0 && fsize < 25000000I64)
     parse_smal(0, flen);
   if (make[0] == 0)
   {
@@ -967,8 +967,8 @@ void LibRaw::identify()
           filters = canon[i][10] * 0x01010101U;
         fromtable = true;
       }
-    if ((unique_id | 0x20000ULL) ==
-        0x2720000ULL) // "PowerShot G11", "PowerShot S90": 0x2700000, 0x2720000
+    if ((unique_id | 0x20000UI64) ==
+        0x2720000UI64) // "PowerShot G11", "PowerShot S90": 0x2700000, 0x2720000
                       // possibly "PowerShot SX120 IS" (if not chdk hack?): 0x2710000
     {
       left_margin = 8;

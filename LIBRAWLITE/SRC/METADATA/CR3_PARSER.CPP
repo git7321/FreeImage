@@ -473,7 +473,7 @@ int LibRaw::parseCR3(UINT64 oAtomList,
 
   while (((oAtom + 8ULL) <= (oAtomList + szAtomList)) && ((oAtom+8ULL) < filesz))
   {
-    lHdr = 0ULL;
+    lHdr = 0UI64;
     err = 0;
     order = 0x4d4d;
     fseek(ifp, oAtom, SEEK_SET);
@@ -511,7 +511,7 @@ int LibRaw::parseCR3(UINT64 oAtomList,
       err = 1;
     }
 
-    if (szAtom == 0ULL)
+    if (szAtom == 0UI64)
     {
       if (nesting != 0)
       {
@@ -557,15 +557,15 @@ int LibRaw::parseCR3(UINT64 oAtomList,
 	{
 		INT64 tt = ftell(ifp);
 		lHdr = 16ULL;
-		memset(UIID, 0, lHdr);
-		fread(UIID, 1, lHdr, ifp);
-		if (!memcmp(UIID, UUID_XMP, 16) && szAtom > 24LL && szAtom < 1024000LL)
+		memset(UIID, 0, (size_t)lHdr);
+		fread(UIID, 1, (size_t)lHdr, ifp);
+		if (!memcmp(UIID, UUID_XMP, 16) && szAtom > 24I64 && szAtom < 1024000I64)
 		{
 			xmpdata = (char *)calloc(1, xmplen = unsigned(szAtom - 23));
-			unsigned br = fread(xmpdata,1, szAtom - 24, ifp);
+			unsigned br = fread(xmpdata,1, (size_t)(szAtom - 24), ifp);
 			xmpdata[br] = 0;
 		}
-		else if (!memcmp(UIID, UIID_CanonPreview, 16) && szAtom > 48LL && szAtom < 100LL * 1024000LL)
+		else if (!memcmp(UIID, UIID_CanonPreview, 16) && szAtom > 48I64 && szAtom < 100I64 * 1024000I64)
 		{
 			// read next 48 bytes, check for 'PRVW'
 			unsigned char xdata[32];
@@ -613,9 +613,9 @@ int LibRaw::parseCR3(UINT64 oAtomList,
     if (!strcmp(AtomNameStack, "moovuuid"))
     {
       lHdr = 16ULL;
-	  memset(UIID, 0, lHdr);
-      fread(UIID, 1, lHdr, ifp);
-      if (!strncmp(UIID, UIID_Canon, lHdr))
+	  memset(UIID, 0, (size_t)lHdr);
+      fread(UIID, 1, (size_t)lHdr, ifp);
+      if (!strncmp(UIID, UIID_Canon, (size_t)lHdr))
       {
         AtomType = 1;
       }

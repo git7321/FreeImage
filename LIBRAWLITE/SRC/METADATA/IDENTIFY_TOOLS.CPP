@@ -45,10 +45,10 @@ float LibRaw::find_green(int bps, int bite, int off0, int off1)
 {
   UINT64 bitbuf = 0;
   int vbits, col, i, c;
-  ushort img[2][2064];
+  ushort img[2][2065];
   float sum[] = {0, 0};
   if (width > 2064)
-    return 0.f; // too wide
+    return 0.f;
 
   FORC(2)
   {
@@ -79,22 +79,29 @@ void LibRaw::trimSpaces(char *s)
 {
   char *p = s;
   int l = int(strlen(p));
-  if (!l)
+  if (l<1)
     return;
-  while (isspace(p[l - 1]))
-    p[--l] = 0; /* trim trailing spaces */
-  while (*p && isspace(*p))
-    ++p, --l;   /* trim leading spaces */
+  while (l > 0 && isspace(p[l - 1]))
+    p[--l] = 0;
+  if (l < 1)
+	  return;
+  while (*p && isspace(*p) && l > 0)
+    ++p, --l;
+  if (l < 1)
+  {
+	  *s = 0;
+	  return;
+  }
   memmove(s, p, l + 1);
 }
 
 void LibRaw::remove_trailing_spaces(char *string, size_t len)
 {
   if (len < 1)
-    return; // not needed, b/c sizeof of make/model is 64
+    return;
   string[len - 1] = 0;
   if (len < 3)
-    return; // also not needed
+    return;
   len = strnlen(string, len - 1);
   for (int i = int(len) - 1; i >= 0; i--)
   {
@@ -105,7 +112,7 @@ void LibRaw::remove_trailing_spaces(char *string, size_t len)
   }
 }
 
-void LibRaw::remove_caseSubstr(char *string, char *subStr) // replace a substring with an equal length of spaces
+void LibRaw::remove_caseSubstr(char *string, char *subStr)
 {
   char *found;
   while ((found = strcasestr(string,subStr))) {
@@ -119,10 +126,12 @@ void LibRaw::remove_caseSubstr(char *string, char *subStr) // replace a substrin
   trimSpaces (string);
 }
 
-void LibRaw::removeExcessiveSpaces(char *string) // replace repeating spaces with one space
+void LibRaw::removeExcessiveSpaces(char *string)
 {
 	int orig_len = int(strlen(string));
-	int i = 0;   // counter for resulting string
+	if (orig_len < 1)
+		return;
+	int i = 0;
 	int j = -1;
 	bool prev_char_is_space = false;
 	while (++j < orig_len && string[j] == ' ');
@@ -137,6 +146,8 @@ void LibRaw::removeExcessiveSpaces(char *string) // replace repeating spaces wit
 			}
 		}
 	}
-	if (string[i-1] == ' ')
-    string[i-1] = 0;
+    if (i > 0 && string[i - 1] == ' ')
+		string[i-1] = 0;
+	if(i < orig_len)
+		string[i] = 0; 
 }

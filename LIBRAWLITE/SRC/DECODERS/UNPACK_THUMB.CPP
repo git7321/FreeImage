@@ -31,7 +31,6 @@ int LibRaw::unpack_thumb_ex(int idx)
 	if (idx < 0 || idx >= imgdata.thumbs_list.thumbcount || idx >= LIBRAW_THUMBNAIL_MAXCOUNT)
 		return LIBRAW_REQUEST_FOR_NONEXISTENT_THUMBNAIL;
 
-	// Set from thumb-list
     libraw_internal_data.internal_data.toffset = imgdata.thumbs_list.thumblist[idx].toffset;
     imgdata.thumbnail.tlength = imgdata.thumbs_list.thumblist[idx].tlength;
     libraw_internal_data.unpacker_data.thumb_format = imgdata.thumbs_list.thumblist[idx].tformat; 
@@ -43,7 +42,6 @@ int LibRaw::unpack_thumb_ex(int idx)
 
 	return rc;
 }
-
 
 int LibRaw::unpack_thumb(void)
 {
@@ -80,7 +78,7 @@ int LibRaw::unpack_thumb(void)
     int t_bytesps = (libraw_internal_data.unpacker_data.thumb_misc & 31) / 8;
 
     if (!ID.toffset && !(imgdata.thumbnail.tlength > 0 &&
-                         load_raw == &LibRaw::broadcom_load_raw)  // RPi
+                         load_raw == &LibRaw::broadcom_load_raw)
         && !(imgdata.thumbnail.tlength > 0 && libraw_internal_data.unpacker_data.load_flags & 0x4000
             && (load_raw == &LibRaw::rpi_load_raw8 || load_raw == &LibRaw::nokia_load_raw ||
            load_raw == &LibRaw::rpi_load_raw12 || load_raw == &LibRaw::rpi_load_raw14))
@@ -147,11 +145,7 @@ int LibRaw::unpack_thumb(void)
         THUMB_SIZE_CHECKTNZ(T.tlength);
         if (T.thumb)
           free(T.thumb);
-#ifdef LIBRAW_CALLOC_RAWSTORE
         T.thumb = (char *)calloc(1, T.tlength);
-#else
-        T.thumb = (char *)malloc(T.tlength);
-#endif
 		if(!T.thumb)
           return LIBRAW_NO_THUMBNAIL;
         ID.input->read(T.thumb, 1, T.tlength);
@@ -164,7 +158,6 @@ int LibRaw::unpack_thumb(void)
 		}
 		if (load_raw == &LibRaw::crxLoadRaw && T.tlength > 0xE0)
 		{
-			// Check if it is canon H.265 preview:  CISZ at bytes 4-6, CISZ prefix is 000n
 			if (tthumb[0] == 0 && tthumb[1] == 0 && tthumb[2] == 0 && !memcmp(tthumb + 4, "CISZ", 4))
 			{
 				T.tformat = LIBRAW_THUMBNAIL_H265;
@@ -182,8 +175,6 @@ int LibRaw::unpack_thumb(void)
           if (setjmp(jerr.setjmp_buffer))
           {
           err2:
-            // Error in original JPEG thumb, read it again because
-            // original bytes 0-1 was damaged above
             jpeg_destroy_decompress(&cinfo);
             T.tcolors = 3;
             T.tformat = LIBRAW_THUMBNAIL_UNKNOWN;
@@ -227,17 +218,16 @@ int LibRaw::unpack_thumb(void)
 			T.thumb = 0;
             return LIBRAW_NO_THUMBNAIL;
 		}
-        // Avoid OOB of tbuf, should use tlength
         ID.input->read(tbuf, colors, tlength);
         if (libraw_internal_data.unpacker_data.thumb_misc >> 8 &&
-            colors == 3) // GRB order
+            colors == 3)
           for (int i = 0; i < tlength; i++)
           {
             T.thumb[i * 3] = tbuf[i + tlength];
             T.thumb[i * 3 + 1] = tbuf[i];
             T.thumb[i * 3 + 2] = tbuf[i + 2 * tlength];
           }
-        else if (colors == 3) // RGB or 1-channel
+        else if (colors == 3)
           for (int i = 0; i < tlength; i++)
           {
             T.thumb[i * 3] = tbuf[i];
@@ -299,24 +289,22 @@ int LibRaw::unpack_thumb(void)
       else if (Tformat == LIBRAW_INTERNAL_THUMBNAIL_PPM)
       {
         if (t_bytesps > 1)
-          return LIBRAW_NO_THUMBNAIL;  // 8-bit thumb, but parsed for more
-                                             // bits
+          return LIBRAW_NO_THUMBNAIL;
         THUMB_SIZE_CHECKWH(T.twidth, T.theight);
         int t_length = T.twidth * T.theight * t_colors;
 
         if (T.tlength &&
-            (int)T.tlength < t_length) // try to find tiff ifd with needed offset
+            (int)T.tlength < t_length)
         {
           int pifd = find_ifd_by_offset(libraw_internal_data.internal_data.toffset);
           if (pifd >= 0 && tiff_ifd[pifd].strip_offsets_count &&
               tiff_ifd[pifd].strip_byte_counts_count)
           {
-            // We found it, calculate final size
             INT64 total_size = 0;
             for (int i = 0; i < tiff_ifd[pifd].strip_byte_counts_count 
 				&& i < tiff_ifd[pifd].strip_offsets_count; i++)
               total_size += tiff_ifd[pifd].strip_byte_counts[i];
-            if (total_size != (unsigned)t_length) // recalculate colors
+            if (total_size != (unsigned)t_length)
             {
               if (total_size == T.twidth * T.tlength * 3)
                 T.tcolors = 3;
@@ -327,11 +315,7 @@ int LibRaw::unpack_thumb(void)
             THUMB_SIZE_CHECKTNZ(T.tlength);
             if (T.thumb)
               free(T.thumb);
-#ifdef LIBRAW_CALLOC_RAWSTORE
             T.thumb = (char *)calloc(1, T.tlength);
-#else
-            T.thumb = (char *)malloc(T.tlength);
-#endif
             if (!T.thumb)
               return LIBRAW_NO_THUMBNAIL;
 
@@ -367,11 +351,7 @@ int LibRaw::unpack_thumb(void)
 
         THUMB_SIZE_CHECKTNZ(T.tlength);
 
-#ifdef LIBRAW_CALLOC_RAWSTORE
         T.thumb = (char *)calloc(1, T.tlength);
-#else
-        T.thumb = (char *)malloc(T.tlength);
-#endif
         if (!T.thumb)
           return LIBRAW_NO_THUMBNAIL;
         if (!T.tcolors)
@@ -386,8 +366,7 @@ int LibRaw::unpack_thumb(void)
       else if (Tformat == LIBRAW_INTERNAL_THUMBNAIL_PPM16)
       {
         if (t_bytesps > 2)
-			return LIBRAW_NO_THUMBNAIL; // 16-bit thumb, but parsed for
-                                             // more bits
+			return LIBRAW_NO_THUMBNAIL;
         int o_bps = (imgdata.rawparams.options & LIBRAW_RAWOPTIONS_USE_PPM16_THUMBS) ? 2 : 1;
         int o_length = T.twidth * T.theight * t_colors * o_bps;
         int i_length = T.twidth * T.theight * t_colors * 2;
@@ -413,11 +392,7 @@ int LibRaw::unpack_thumb(void)
         }
         else
         {
-#ifdef LIBRAW_CALLOC_RAWSTORE
           T.thumb = (char *)calloc(1, o_length);
-#else
-          T.thumb = (char *)malloc(o_length);
-#endif
 		  if (!T.thumb)
 		  {
 			  free(t_thumb);
@@ -434,7 +409,7 @@ int LibRaw::unpack_thumb(void)
       }
 	  else if (Tformat == LIBRAW_INTERNAL_THUMBNAIL_X3F)
       {
-        x3f_thumb_loader(); // errors already catched in this call
+        x3f_thumb_loader();
         SET_PROC_FLAG(LIBRAW_PROGRESS_THUMB_LOAD);
 		if (!T.twidth && !T.theight)
 			return LIBRAW_NO_THUMBNAIL;
@@ -445,8 +420,7 @@ int LibRaw::unpack_thumb(void)
         return LIBRAW_UNSUPPORTED_THUMBNAIL;
       }
     }
-    // last resort
-    return LIBRAW_UNSUPPORTED_THUMBNAIL; /* warned as unreachable*/
+    return LIBRAW_UNSUPPORTED_THUMBNAIL;
   }
   catch (const LibRaw_exceptions& err)
   {

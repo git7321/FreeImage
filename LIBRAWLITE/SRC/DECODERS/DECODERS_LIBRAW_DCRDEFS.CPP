@@ -14,11 +14,10 @@
 
 #include "../../internal/dcraw_defs.h"
 
-
 void LibRaw::nikon_he_load_raw()
 {
     if(dng_version)
-    	throw LIBRAW_EXCEPTION_UNSUPPORTED_FORMAT; // Never reached
+    	throw LIBRAW_EXCEPTION_UNSUPPORTED_FORMAT;
     throw LIBRAW_EXCEPTION_UNSUPPORTED_FORMAT;
 }
 
@@ -39,7 +38,7 @@ void LibRaw::packed_tiled_dng_load_raw()
   }
   catch (...)
   {
-    throw LIBRAW_EXCEPTION_ALLOC; // rethrow
+    throw LIBRAW_EXCEPTION_ALLOC;
   }
   try
   {
@@ -78,7 +77,6 @@ void LibRaw::packed_tiled_dng_load_raw()
   shot_select = ss;
 }
 
-
 void LibRaw::sony_ljpeg_load_raw()
 {
   unsigned trow = 0, tcol = 0, jrow, jcol, row, col;
@@ -88,7 +86,7 @@ void LibRaw::sony_ljpeg_load_raw()
   while (trow < raw_height)
   {
     checkCancel();
-    save = ftell(ifp); // We're at
+    save = ftell(ifp);
     if (tile_length < INT_MAX)
       fseek(ifp, get4(), SEEK_SET);
     if (!ljpeg_start(&jh, 0))
@@ -145,7 +143,7 @@ void LibRaw::nikon_coolscan_load_raw()
 	  if (tiff_bps <= 8)
 	  {
 		  if (fread(buf, 1, bufsize, ifp) < bufsize)
-			  derror(); // will raise EOF exception on eof
+			  derror();
 	  }
       else
           read_shorts(ubuf,width*clrs);
@@ -154,7 +152,7 @@ void LibRaw::nikon_coolscan_load_raw()
     unsigned short *rp =  raw_image + row * raw_width;
 
     if (is_NikonTransfer == 2)
-    { // it is also (tiff_bps == 8)
+    {
         if (clrs == 3)
         {
           for (int col = 0; col < width; col++)
@@ -297,8 +295,8 @@ void LibRaw::rpi_load_raw8()
 	for (row = 0; row < raw_height; row++) {
 		if (fread(data + dwide, 1, dwide, ifp) < dwide) derror();
 		FORC(dwide) data[c] = data[dwide + (c ^ rev)];
-		for (dp = data, col = 0; col < raw_width; dp++, col++)
-			RAW(row, col + c) = dp[c];
+		for (dp = data, col = 0; col < raw_width && col < dwide; dp++, col++)
+			RAW(row, col) = *dp;
 	}
 	free(data);
 	maximum = 0xff;
@@ -394,8 +392,8 @@ void LibRaw::rpi_load_raw16()
 	for (row = 0; row < raw_height; row++) {
 		if (fread(data + dwide, 1, dwide, ifp) < dwide) derror();
 		FORC(dwide) data[c] = data[dwide + (c ^ rev)];
-		for (dp = data, col = 0; col < raw_width; dp += 2, col++)
-			RAW(row, col + c) = (dp[1] << 8) | dp[0];
+		for (dp = data, col = 0; col < raw_width && col < dwide/2; dp += 2, col++)
+			RAW(row, col) = (dp[1] << 8) | dp[0];
 	}
 	free(data);
 	maximum = 0xffff;

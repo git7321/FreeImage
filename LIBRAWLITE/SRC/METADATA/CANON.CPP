@@ -142,7 +142,7 @@ void LibRaw::setCanonBodyFeatures(unsigned long long id)
 
   else if ((id == CanonID_EOS_D30) ||
            (id == CanonID_EOS_D60) ||
-           (id > 0x80000000ULL))
+           (id > 0x80000000UI64))
   {
     ilm.CameraFormat = LIBRAW_FORMAT_APSC;
     ilm.CameraMount = LIBRAW_MOUNT_Canon_EF;

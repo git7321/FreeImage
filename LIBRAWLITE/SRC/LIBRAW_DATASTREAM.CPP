@@ -763,8 +763,8 @@ INT64 LibRaw_bigfile_buffered_datastream::readAt(void *ptr, size_t size, INT64 o
     DWORD nNumberOfBytesToRead = (DWORD)size;
     struct _OVERLAPPED olap;
     memset(&olap, 0, sizeof(olap));
-    olap.Offset = off & 0xffffffff;
-    olap.OffsetHigh = off >> 32;
+    olap.Offset = (DWORD)(off & 0xffffffff);
+    olap.OffsetHigh = (DWORD)(off >> 32);
 	if (ReadFile(fhandle, ptr, nNumberOfBytesToRead, &NumberOfBytesRead, &olap))
 		return NumberOfBytesRead;
 	else if (NumberOfBytesRead > 0)
@@ -789,7 +789,7 @@ int LibRaw_bigfile_buffered_datastream::read(void *data, size_t size, size_t nme
     INT64 partbytes = 0;
     if (!buffered)
     {
-        INT64 r = readAt(data, count, _fpos);
+        INT64 r = readAt(data, (size_t)count, _fpos);
         _fpos += r;
         return int(r / size);
     }
@@ -803,11 +803,11 @@ int LibRaw_bigfile_buffered_datastream::read(void *data, size_t size, size_t nme
         {
             if (inbuffer >= count)
             {
-                memcpy(data, fBuffer + (unsigned)(_fpos - iobuffers[0]._bstart), count);
+                memcpy(data, fBuffer + (unsigned)(_fpos - iobuffers[0]._bstart), (size_t)count);
                 _fpos += count;
                 return int((count + partbytes) / size);
             }
-            memcpy(data, fBuffer + (_fpos - iobuffers[0]._bstart), inbuffer);
+            memcpy(data, fBuffer + (_fpos - iobuffers[0]._bstart), (size_t)inbuffer);
             partbytes += inbuffer;
             count -= inbuffer;
             data = (void *)(((char *)data) + inbuffer);
@@ -820,7 +820,7 @@ int LibRaw_bigfile_buffered_datastream::read(void *data, size_t size, size_t nme
                 count = MAX(0, _fsize - _fpos);
             if (count > 0)
             {
-                INT64 r = readAt(data, count, _fpos);
+                INT64 r = readAt(data, (size_t)count, _fpos);
                 _fpos += r;
                 return int((r + partbytes) / size);
             }
@@ -836,7 +836,7 @@ int LibRaw_bigfile_buffered_datastream::read(void *data, size_t size, size_t nme
 
 bool LibRaw_bigfile_buffered_datastream::fillBufferAt(int bi, INT64 off)
 {
-    if (off < 0LL) return false;
+    if (off < 0I64) return false;
     iobuffers[bi]._bstart = off;
     if (iobuffers[bi].size() >= LIBRAW_BUFFER_ALIGN * 2)// Align to a file block.
         iobuffers[bi]._bstart &= (INT64)~((INT64)(LIBRAW_BUFFER_ALIGN - 1));

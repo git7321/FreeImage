@@ -204,7 +204,7 @@ bool pana8_param_t::DecodeC8(pana8_bufio_t &bufio, unsigned int width, unsigned 
   int32_t	doublewidth = 4 * halfwidth;
   std::vector<uint8_t> outline(4 * doublewidth);
   pana8_base_t line_base(start_coeff);
-  int64_t	bittail = 0LL;
+  int64_t	bittail = 0I64;
   int32_t	bitportion = 0;
   uint32_t inqword = 0u;
 
@@ -301,7 +301,7 @@ bool pana8_param_t::DecodeC8(pana8_bufio_t &bufio, unsigned int width, unsigned 
 			  }
 #undef _LIM
 			  if (huff_index <= v37)
-				  v90 = 0LL;
+				  v90 = 0I64;
 			  bittail = v38 << v90;
 			  bitportion = int32_t(v42 - v90);
 
@@ -434,12 +434,12 @@ pana8_param_t::pana8_param_t(const pana8_tags_t &meta) : gammaTable(0)
   {
     if (extrahuff.size() < 0x10000)
       extrahuff.resize(0x10000);
-    uint64_t v17 = 0LL;
+    uint64_t v17 = 0I64;
 
-	for (int j = 0LL; j != 0x10000; ++j)
+	for (int j = 0I64; j != 0x10000; ++j)
 	{
 		extrahuff[j] = uint8_t(GetDBit(v17) & 0xffu);
-		v17 += 0x1000000000000ULL;
+		v17 += 0x1000000000000UI64;
 	}
   }
 }
@@ -467,7 +467,7 @@ int32_t pana8_param_t::gammaCurve(uint32_t idx)
       {
         v5 = 3;
         if (v4 >= (0xFFFF & tag3A[4]))
-          v5 = ((v4 | 0x500000000LL) - (uint64_t)(0xFFFF & tag3A[5])) >> 32;
+          v5 = ((v4 | 0x500000000I64) - (uint64_t)(0xFFFF & tag3A[5])) >> 32;
       }
     }
   }

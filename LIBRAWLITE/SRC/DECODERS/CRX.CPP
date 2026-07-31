@@ -1649,7 +1649,7 @@ void crxFreeSubbandData(CrxImage *image, CrxPlaneComp *comp)
     if (comp->subBands[i].bandParam)
     {
       free(comp->subBands[i].bandParam);
-      comp->subBands[i].bandParam = 0LL;
+      comp->subBands[i].bandParam = 0I64;
     }
 
     comp->subBands[i].bandBuf = 0;

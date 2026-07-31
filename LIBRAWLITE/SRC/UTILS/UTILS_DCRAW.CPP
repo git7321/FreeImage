@@ -85,7 +85,7 @@ void LibRaw::initdata()
   maximum = height = width = top_margin = left_margin = 0;
   cdesc[0] = desc[0] = artist[0] = make[0] = model[0] = model2[0] = 0;
   iso_speed = shutter = aperture = focal_len = 0;
-  unique_id = 0ULL;
+  unique_id = 0UI64;
   tiff_nifds = 0;
   memset(tiff_ifd, 0, sizeof tiff_ifd);
   for (int i = 0; i < LIBRAW_IFD_MAXCOUNT; i++)
