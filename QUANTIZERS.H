@@ -78,23 +78,12 @@ public:
 	FIBITMAP* Quantize(int PaletteSize, int ReserveSize, RGBQUAD *ReservePalette);
 };
 
-
-/**
-  NEUQUANT Neural-Net quantization algorithm by Anthony Dekker
-*/
-
 // ----------------------------------------------------------------
 // Constant definitions
 // ----------------------------------------------------------------
 
-/** number of colours used: 
-	for 256 colours, fixed arrays need 8kb, plus space for the image
-*/
-//static const int netsize = 256;
-
 /**@name network definitions */
 //@{
-//static const int maxnetpos = (netsize - 1);
 /// bias for colour values
 static const int netbiasshift = 4;
 /// no. of learning cycles
@@ -158,9 +147,6 @@ protected:
 	int img_line;
 	//@}
 
-	/**@name network parameters */
-	//@{
-
 	int netsize, maxnetpos, initrad, initradius;
 
 	/// BGRc
@@ -209,7 +195,6 @@ protected:
 	/// Get a pixel sample at position pos. Handle 4-byte boundary alignment.
 	void getSample(long pos, int *b, int *g, int *r);
 
-
 public:
 	/// Constructor
 	NNQuantizer(int PaletteSize);
@@ -224,7 +209,6 @@ public:
 	@return returns the quantized 8-bit (color palette) DIB
 	*/
 	FIBITMAP* Quantize(FIBITMAP *dib, int ReserveSize, RGBQUAD *ReservePalette, int sampling = 1);
-
 };
 
 /**
@@ -353,7 +337,6 @@ protected:
 	 * @param palette a pointer to the destination palette
 	 */
 	void WritePalette(void *palette);
-
 };
 
 #endif // FREEIMAGE_QUANTIZER_H

@@ -1,4 +1,4 @@
-﻿// ==========================================================
+// ==========================================================
 // Utility functions
 //
 // Design and implementation by
@@ -56,7 +56,7 @@
 //   Bitmap palette and pixels alignment
 // ==========================================================
 
-#define FIBITMAP_ALIGNMENT	16	// We will use a 16 bytes alignment boundary
+#define FIBITMAP_ALIGNMENT	16
 
 // Memory allocation on a specified alignment boundary
 // defined in BitmapAccess.cpp
@@ -124,7 +124,6 @@ DLL_API BOOL DLL_CALLCONV FreeImage_HasRGBMasks(FIBITMAP *dib);
 #if defined(__cplusplus)
 }
 #endif
-
 
 // ==========================================================
 //   File I/O structs
@@ -331,8 +330,6 @@ AssignPixel(BYTE* dst, const BYTE* src, unsigned bytesperpixel) {
 			*(reinterpret_cast<DWORD*>(dst)) = *(reinterpret_cast<const DWORD*> (src));
 			*(reinterpret_cast<WORD*>(dst + 4)) = *(reinterpret_cast<const WORD*> (src + 4));	
 			break;
-
-		// the rest can be speeded up with int64
 			
 		case 8: // FIT_RGBA16 (4 x 16-bit)
 			*(reinterpret_cast<DWORD*>(dst)) = *(reinterpret_cast<const DWORD*> (src));
@@ -391,7 +388,6 @@ Rotate a dib according to Exif info
 @see Exif.cpp, PluginJPEG.cpp
 */
 void RotateExif(FIBITMAP **dib);
-
 
 // ==========================================================
 //   Big Endian / Little Endian utility functions
@@ -478,12 +474,6 @@ A Standard Default Color Space for the Internet - sRGB.
 #define LUMA_REC709(r, g, b)	(0.2126F * r + 0.7152F * g + 0.0722F * b)
 
 #define GREY(r, g, b) (BYTE)(LUMA_REC709(r, g, b) + 0.5F)
-/*
-#define GREY(r, g, b) (BYTE)(((WORD)r * 77 + (WORD)g * 150 + (WORD)b * 29) >> 8)	// .299R + .587G + .114B
-*/
-/*
-#define GREY(r, g, b) (BYTE)(((WORD)r * 169 + (WORD)g * 256 + (WORD)b * 87) >> 9)	// .33R + 0.5G + .17B
-*/
 
 /**
 Convert a RGB 24-bit value to a 16-bit 565 value
