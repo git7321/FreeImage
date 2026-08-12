@@ -42,62 +42,6 @@
 #include "opj_includes.h"
 #include "opj_common.h"
 
-/* ----------------------------------------------------------------------- */
-
-/* TODO MSD: */
-#ifdef TODO_MSD
-void tcd_dump(FILE *fd, opj_tcd_t *tcd, opj_tcd_image_t * img)
-{
-    int tileno, compno, resno, bandno, precno;/*, cblkno;*/
-
-    fprintf(fd, "image {\n");
-    fprintf(fd, "  tw=%d, th=%d x0=%d x1=%d y0=%d y1=%d\n",
-            img->tw, img->th, tcd->image->x0, tcd->image->x1, tcd->image->y0,
-            tcd->image->y1);
-
-    for (tileno = 0; tileno < img->th * img->tw; tileno++) {
-        opj_tcd_tile_t *tile = &tcd->tcd_image->tiles[tileno];
-        fprintf(fd, "  tile {\n");
-        fprintf(fd, "    x0=%d, y0=%d, x1=%d, y1=%d, numcomps=%d\n",
-                tile->x0, tile->y0, tile->x1, tile->y1, tile->numcomps);
-        for (compno = 0; compno < tile->numcomps; compno++) {
-            opj_tcd_tilecomp_t *tilec = &tile->comps[compno];
-            fprintf(fd, "    tilec {\n");
-            fprintf(fd,
-                    "      x0=%d, y0=%d, x1=%d, y1=%d, numresolutions=%d\n",
-                    tilec->x0, tilec->y0, tilec->x1, tilec->y1, tilec->numresolutions);
-            for (resno = 0; resno < tilec->numresolutions; resno++) {
-                opj_tcd_resolution_t *res = &tilec->resolutions[resno];
-                fprintf(fd, "\n   res {\n");
-                fprintf(fd,
-                        "          x0=%d, y0=%d, x1=%d, y1=%d, pw=%d, ph=%d, numbands=%d\n",
-                        res->x0, res->y0, res->x1, res->y1, res->pw, res->ph, res->numbands);
-                for (bandno = 0; bandno < res->numbands; bandno++) {
-                    opj_tcd_band_t *band = &res->bands[bandno];
-                    fprintf(fd, "        band {\n");
-                    fprintf(fd,
-                            "          x0=%d, y0=%d, x1=%d, y1=%d, stepsize=%f, numbps=%d\n",
-                            band->x0, band->y0, band->x1, band->y1, band->stepsize, band->numbps);
-                    for (precno = 0; precno < res->pw * res->ph; precno++) {
-                        opj_tcd_precinct_t *prec = &band->precincts[precno];
-                        fprintf(fd, "          prec {\n");
-                        fprintf(fd,
-                                "            x0=%d, y0=%d, x1=%d, y1=%d, cw=%d, ch=%d\n",
-                                prec->x0, prec->y0, prec->x1, prec->y1, prec->cw, prec->ch);
-                        fprintf(fd, "          }\n");
-                    }
-                    fprintf(fd, "        }\n");
-                }
-                fprintf(fd, "      }\n");
-            }
-            fprintf(fd, "    }\n");
-        }
-        fprintf(fd, "  }\n");
-    }
-    fprintf(fd, "}\n");
-}
-#endif
-
 /**
  * Initializes tile coding/decoding
  */
@@ -1510,50 +1454,16 @@ OPJ_BOOL opj_tcd_decode_tile(opj_tcd_t *p_tcd,
         }
     }
 
-#ifdef TODO_MSD /* FIXME */
-    /* INDEX >>  */
-    if (p_cstr_info) {
-        OPJ_UINT32 resno, compno, numprec = 0;
-        for (compno = 0; compno < (OPJ_UINT32) p_cstr_info->numcomps; compno++) {
-            opj_tcp_t *tcp = &p_tcd->cp->tcps[0];
-            opj_tccp_t *tccp = &tcp->tccps[compno];
-            opj_tcd_tilecomp_t *tilec_idx = &p_tcd->tcd_image->tiles->comps[compno];
-            for (resno = 0; resno < tilec_idx->numresolutions; resno++) {
-                opj_tcd_resolution_t *res_idx = &tilec_idx->resolutions[resno];
-                p_cstr_info->tile[p_tile_no].pw[resno] = res_idx->pw;
-                p_cstr_info->tile[p_tile_no].ph[resno] = res_idx->ph;
-                numprec += res_idx->pw * res_idx->ph;
-                p_cstr_info->tile[p_tile_no].pdx[resno] = tccp->prcw[resno];
-                p_cstr_info->tile[p_tile_no].pdy[resno] = tccp->prch[resno];
-            }
-        }
-        p_cstr_info->tile[p_tile_no].packet = (opj_packet_info_t *) opj_malloc(
-                p_cstr_info->numlayers * numprec * sizeof(opj_packet_info_t));
-        p_cstr_info->packno = 0;
-    }
-    /* << INDEX */
-#endif
-
-    /*--------------TIER2------------------*/
-    /* FIXME _ProfStart(PGROUP_T2); */
     l_data_read = 0;
     if (! opj_tcd_t2_decode(p_tcd, p_src, &l_data_read, p_max_length, p_cstr_index,
                             p_manager)) {
         return OPJ_FALSE;
     }
-    /* FIXME _ProfStop(PGROUP_T2); */
 
-    /*------------------TIER1-----------------*/
-
-    /* FIXME _ProfStart(PGROUP_T1); */
     if (! opj_tcd_t1_decode(p_tcd, p_manager)) {
         return OPJ_FALSE;
     }
-    /* FIXME _ProfStop(PGROUP_T1); */
 
-
-    /* For subtile decoding, now we know the resno_decoded, we can allocate */
-    /* the tile data buffer */
     if (!p_tcd->whole_tile_decoding) {
         for (compno = 0; compno < p_tcd->image->numcomps; compno++) {
             opj_tcd_tilecomp_t* tilec = &(p_tcd->tcd_image->tiles->comps[compno]);
@@ -1588,32 +1498,21 @@ OPJ_BOOL opj_tcd_decode_tile(opj_tcd_t *p_tcd,
         }
     }
 
-    /*----------------DWT---------------------*/
-
-    /* FIXME _ProfStart(PGROUP_DWT); */
     if
     (! opj_tcd_dwt_decode(p_tcd)) {
         return OPJ_FALSE;
     }
-    /* FIXME _ProfStop(PGROUP_DWT); */
 
-    /*----------------MCT-------------------*/
-    /* FIXME _ProfStart(PGROUP_MCT); */
     if
     (! opj_tcd_mct_decode(p_tcd, p_manager)) {
         return OPJ_FALSE;
     }
-    /* FIXME _ProfStop(PGROUP_MCT); */
 
-    /* FIXME _ProfStart(PGROUP_DC_SHIFT); */
     if
     (! opj_tcd_dc_level_shift_decode(p_tcd)) {
         return OPJ_FALSE;
     }
-    /* FIXME _ProfStop(PGROUP_DC_SHIFT); */
 
-
-    /*---------------TILE-------------------*/
     return OPJ_TRUE;
 }
 
@@ -1639,8 +1538,8 @@ OPJ_BOOL opj_tcd_update_tile_data(opj_tcd_t *p_tcd,
 
     for (i = 0; i < p_tcd->image->numcomps; ++i) {
         const OPJ_INT32* l_src_data;
-        l_size_comp = l_img_comp->prec >> 3; /*(/ 8)*/
-        l_remaining = l_img_comp->prec & 7;  /* (%8) */
+        l_size_comp = l_img_comp->prec >> 3;
+        l_remaining = l_img_comp->prec & 7;
         l_res = l_tilec->resolutions + l_img_comp->resno_decoded;
         if (p_tcd->whole_tile_decoding) {
             l_width = (OPJ_UINT32)(l_res->x1 - l_res->x0);
@@ -1737,9 +1636,6 @@ OPJ_BOOL opj_tcd_update_tile_data(opj_tcd_t *p_tcd,
     return OPJ_TRUE;
 }
 
-
-
-
 static void opj_tcd_free_tile(opj_tcd_t *p_tcd)
 {
     OPJ_UINT32 compno, resno, bandno, precno;
@@ -1799,7 +1695,7 @@ static void opj_tcd_free_tile(opj_tcd_t *p_tcd)
                         l_band->precincts = 00;
                     }
                     ++l_band;
-                } /* for (resno */
+                }
                 ++l_res;
             }
 
@@ -1825,7 +1721,6 @@ static void opj_tcd_free_tile(opj_tcd_t *p_tcd)
     opj_free(p_tcd->tcd_image->tiles);
     p_tcd->tcd_image->tiles = 00;
 }
-
 
 static OPJ_BOOL opj_tcd_t2_decode(opj_tcd_t *p_tcd,
                                   OPJ_BYTE * p_src_data,
@@ -1858,7 +1753,6 @@ static OPJ_BOOL opj_tcd_t2_decode(opj_tcd_t *p_tcd,
 
     opj_t2_destroy(l_t2);
 
-    /*---------------CLEAN-------------------*/
     return OPJ_TRUE;
 }
 
@@ -1874,7 +1768,6 @@ static OPJ_BOOL opj_tcd_t1_decode(opj_tcd_t *p_tcd, opj_event_mgr_t *p_manager)
 
     p_manager_mutex = opj_mutex_create();
 
-    /* Only enable PTERM check if we decode all layers */
     if (p_tcd->tcp->num_layers_to_decode == p_tcd->tcp->numlayers &&
             (l_tccp->cblksty & J2K_CCP_CBLKSTY_PTERM) != 0) {
         check_pterm = OPJ_TRUE;
@@ -1899,7 +1792,6 @@ static OPJ_BOOL opj_tcd_t1_decode(opj_tcd_t *p_tcd, opj_event_mgr_t *p_manager)
     }
     return ret;
 }
-
 
 static OPJ_BOOL opj_tcd_dwt_decode(opj_tcd_t *p_tcd)
 {
@@ -1926,7 +1818,6 @@ static OPJ_BOOL opj_tcd_dwt_decode(opj_tcd_t *p_tcd)
                 return OPJ_FALSE;
             }
         }
-
     }
 
     return OPJ_TRUE;
@@ -1948,9 +1839,6 @@ static OPJ_BOOL opj_tcd_mct_decode(opj_tcd_t *p_tcd, opj_event_mgr_t *p_manager)
         opj_tcd_resolution_t* res_comp0 = l_tile->comps[0].resolutions +
                                           l_tile_comp->minimum_num_resolutions - 1;
 
-        /* A bit inefficient: we process more data than needed if */
-        /* resno_decoded < l_tile_comp->minimum_num_resolutions-1, */
-        /* but we would need to take into account a stride then */
         l_samples = (OPJ_SIZE_T)(res_comp0->x1 - res_comp0->x0) *
                     (OPJ_SIZE_T)(res_comp0->y1 - res_comp0->y0);
         if (l_tile->numcomps >= 3) {
@@ -1966,7 +1854,6 @@ static OPJ_BOOL opj_tcd_mct_decode(opj_tcd_t *p_tcd, opj_event_mgr_t *p_manager)
                                               l_tile_comp->minimum_num_resolutions - 1;
             opj_tcd_resolution_t* res_comp2 = l_tile->comps[2].resolutions +
                                               l_tile_comp->minimum_num_resolutions - 1;
-            /* testcase 1336.pdf.asan.47.376 */
             if (p_tcd->image->comps[0].resno_decoded !=
                     p_tcd->image->comps[1].resno_decoded ||
                     p_tcd->image->comps[0].resno_decoded !=
@@ -1989,7 +1876,6 @@ static OPJ_BOOL opj_tcd_mct_decode(opj_tcd_t *p_tcd, opj_event_mgr_t *p_manager)
                                               p_tcd->image->comps[1].resno_decoded;
             opj_tcd_resolution_t* res_comp2 = l_tile->comps[2].resolutions +
                                               p_tcd->image->comps[2].resno_decoded;
-            /* testcase 1336.pdf.asan.47.376 */
             if (p_tcd->image->comps[0].resno_decoded !=
                     p_tcd->image->comps[1].resno_decoded ||
                     p_tcd->image->comps[0].resno_decoded !=
@@ -2025,15 +1911,11 @@ static OPJ_BOOL opj_tcd_mct_decode(opj_tcd_t *p_tcd, opj_event_mgr_t *p_manager)
                 ++l_tile_comp;
             }
 
-            if (! opj_mct_decode_custom(/* MCT data */
+            if (! opj_mct_decode_custom(
                         (OPJ_BYTE*) l_tcp->m_mct_decoding_matrix,
-                        /* size of components */
                         l_samples,
-                        /* components */
                         l_data,
-                        /* nb of components (i.e. size of pData) */
                         l_tile->numcomps,
-                        /* tells if the data is signed */
                         p_tcd->image->comps->sgnd)) {
                 opj_free(l_data);
                 return OPJ_FALSE;
@@ -2070,7 +1952,6 @@ static OPJ_BOOL opj_tcd_mct_decode(opj_tcd_t *p_tcd, opj_event_mgr_t *p_manager)
     }
     return OPJ_TRUE;
 }
-
 
 static OPJ_BOOL opj_tcd_dc_level_shift_decode(opj_tcd_t *p_tcd)
 {
@@ -2114,7 +1995,7 @@ static OPJ_BOOL opj_tcd_dc_level_shift_decode(opj_tcd_t *p_tcd)
             l_current_ptr = l_tile_comp->data;
 
             assert(l_height == 0 ||
-                   l_width + l_stride <= l_tile_comp->data_size / l_height); /*MUPDF*/
+                   l_width + l_stride <= l_tile_comp->data_size / l_height);
         }
 
         if (l_img_comp->sgnd) {
@@ -2125,11 +2006,9 @@ static OPJ_BOOL opj_tcd_dc_level_shift_decode(opj_tcd_t *p_tcd)
             l_max = (OPJ_INT32)((1U << l_img_comp->prec) - 1);
         }
 
-
         if (l_tccp->qmfbid == 1) {
             for (j = 0; j < l_height; ++j) {
                 for (i = 0; i < l_width; ++i) {
-                    /* TODO: do addition on int64 ? */
                     *l_current_ptr = opj_int_clamp(*l_current_ptr + l_tccp->m_dc_level_shift, l_min,
                                                    l_max);
                     ++l_current_ptr;
@@ -2145,7 +2024,6 @@ static OPJ_BOOL opj_tcd_dc_level_shift_decode(opj_tcd_t *p_tcd)
                     } else if (l_value < INT_MIN) {
                         *l_current_ptr = l_min;
                     } else {
-                        /* Do addition on int64 to avoid overflows */
                         OPJ_INT64 l_value_int = (OPJ_INT64)opj_lrintf(l_value);
                         *l_current_ptr = (OPJ_INT32)opj_int64_clamp(
                                              l_value_int + l_tccp->m_dc_level_shift, l_min, l_max);
@@ -2160,11 +2038,6 @@ static OPJ_BOOL opj_tcd_dc_level_shift_decode(opj_tcd_t *p_tcd)
     return OPJ_TRUE;
 }
 
-
-
-/**
- * Deallocates the encoding data of the given precinct.
- */
 static void opj_tcd_code_block_dec_deallocate(opj_tcd_precinct_t * p_precinct)
 {
     OPJ_UINT32 cblkno, l_nb_code_blocks;
@@ -2199,9 +2072,6 @@ static void opj_tcd_code_block_dec_deallocate(opj_tcd_precinct_t * p_precinct)
     }
 }
 
-/**
- * Deallocates the encoding data of the given precinct.
- */
 static void opj_tcd_code_block_enc_deallocate(opj_tcd_precinct_t * p_precinct)
 {
     OPJ_UINT32 cblkno, l_nb_code_blocks;
@@ -2213,8 +2083,6 @@ static void opj_tcd_code_block_enc_deallocate(opj_tcd_precinct_t * p_precinct)
 
         for (cblkno = 0; cblkno < l_nb_code_blocks; ++cblkno)  {
             if (l_code_block->data) {
-                /* We refer to data - 1 since below we incremented it */
-                /* in opj_tcd_code_block_enc_allocate_data() */
                 opj_free(l_code_block->data - 1);
                 l_code_block->data = 00;
             }
@@ -2248,8 +2116,8 @@ OPJ_SIZE_T opj_tcd_get_encoder_input_buffer_size(opj_tcd_t *p_tcd)
     l_tilec = p_tcd->tcd_image->tiles->comps;
     l_img_comp = p_tcd->image->comps;
     for (i = 0; i < p_tcd->image->numcomps; ++i) {
-        l_size_comp = l_img_comp->prec >> 3; /*(/ 8)*/
-        l_remaining = l_img_comp->prec & 7;  /* (%8) */
+        l_size_comp = l_img_comp->prec >> 3;
+        l_remaining = l_img_comp->prec & 7;
 
         if (l_remaining) {
             ++l_size_comp;
@@ -2338,15 +2206,11 @@ static OPJ_BOOL opj_tcd_mct_encode(opj_tcd_t *p_tcd)
             ++l_tile_comp;
         }
 
-        if (! opj_mct_encode_custom(/* MCT data */
+        if (! opj_mct_encode_custom(
                     (OPJ_BYTE*) p_tcd->tcp->m_mct_coding_matrix,
-                    /* size of components */
                     samples,
-                    /* components */
                     l_data,
-                    /* nb of components (i.e. size of pData) */
                     l_tile->numcomps,
-                    /* tells if the data is signed */
                     p_tcd->image->comps->sgnd)) {
             opj_free(l_data);
             return OPJ_FALSE;
@@ -2400,7 +2264,6 @@ static OPJ_BOOL opj_tcd_t1_encode(opj_tcd_t *p_tcd)
 
     if (l_tcp->mct == 1) {
         l_mct_numcomps = 3U;
-        /* irreversible encoding */
         if (l_tcp->tccps->qmfbid == 0) {
             l_mct_norms = opj_mct_get_mct_norms_real();
         } else {
@@ -2454,10 +2317,8 @@ static OPJ_BOOL opj_tcd_t2_encode(opj_tcd_t *p_tcd,
 
     opj_t2_destroy(l_t2);
 
-    /*---------------CLEAN-------------------*/
     return OPJ_TRUE;
 }
-
 
 static OPJ_BOOL opj_tcd_rate_allocate_encode(opj_tcd_t *p_tcd,
         OPJ_BYTE * p_dest_data,
@@ -2474,20 +2335,16 @@ static OPJ_BOOL opj_tcd_rate_allocate_encode(opj_tcd_t *p_tcd,
 
     if (l_cp->m_specific_param.m_enc.m_disto_alloc ||
             l_cp->m_specific_param.m_enc.m_fixed_quality)  {
-        /* fixed_quality */
-        /* Normal Rate/distortion allocation */
         if (! opj_tcd_rateallocate(p_tcd, p_dest_data, &l_nb_written, p_max_dest_size,
                                    p_cstr_info, p_manager)) {
             return OPJ_FALSE;
         }
     } else {
-        /* Fixed layer allocation */
         opj_tcd_rateallocate_fixed(p_tcd);
     }
 
     return OPJ_TRUE;
 }
-
 
 OPJ_BOOL opj_tcd_copy_tile_data(opj_tcd_t *p_tcd,
                                 OPJ_BYTE * p_src,
@@ -2509,8 +2366,8 @@ OPJ_BOOL opj_tcd_copy_tile_data(opj_tcd_t *p_tcd,
     l_tilec = p_tcd->tcd_image->tiles->comps;
     l_img_comp = p_tcd->image->comps;
     for (i = 0; i < p_tcd->image->numcomps; ++i) {
-        l_size_comp = l_img_comp->prec >> 3; /*(/ 8)*/
-        l_remaining = l_img_comp->prec & 7;  /* (%8) */
+        l_size_comp = l_img_comp->prec >> 3;
+        l_remaining = l_img_comp->prec & 7;
         l_nb_elem = (OPJ_SIZE_T)(l_tilec->x1 - l_tilec->x0) *
                     (OPJ_SIZE_T)(l_tilec->y1 - l_tilec->y0);
 
@@ -2591,19 +2448,9 @@ OPJ_BOOL opj_tcd_is_subband_area_of_interest(opj_tcd_t *tcd,
         OPJ_UINT32 band_x1,
         OPJ_UINT32 band_y1)
 {
-    /* Note: those values for filter_margin are in part the result of */
-    /* experimentation. The value 2 for QMFBID=1 (5x3 filter) can be linked */
-    /* to the maximum left/right extension given in tables F.2 and F.3 of the */
-    /* standard. The value 3 for QMFBID=0 (9x7 filter) is more suspicious, */
-    /* since F.2 and F.3 would lead to 4 instead, so the current 3 might be */
-    /* needed to be bumped to 4, in case inconsistencies are found while */
-    /* decoding parts of irreversible coded images. */
-    /* See opj_dwt_decode_partial_53 and opj_dwt_decode_partial_97 as well */
     OPJ_UINT32 filter_margin = (tcd->tcp->tccps[compno].qmfbid == 1) ? 2 : 3;
     opj_tcd_tilecomp_t *tilec = &(tcd->tcd_image->tiles->comps[compno]);
     opj_image_comp_t* image_comp = &(tcd->image->comps[compno]);
-    /* Compute the intersection of the area of interest, expressed in tile coordinates */
-    /* with the tile coordinates */
     OPJ_UINT32 tcx0 = opj_uint_max(
                           (OPJ_UINT32)tilec->x0,
                           opj_uint_ceildiv(tcd->win_x0, image_comp->dx));
@@ -2616,12 +2463,9 @@ OPJ_BOOL opj_tcd_is_subband_area_of_interest(opj_tcd_t *tcd,
     OPJ_UINT32 tcy1 = opj_uint_min(
                           (OPJ_UINT32)tilec->y1,
                           opj_uint_ceildiv(tcd->win_y1, image_comp->dy));
-    /* Compute number of decomposition for this band. See table F-1 */
     OPJ_UINT32 nb = (resno == 0) ?
                     tilec->numresolutions - 1 :
                     tilec->numresolutions - resno;
-    /* Map above tile-based coordinates to sub-band-based coordinates per */
-    /* equation B-15 of the standard */
     OPJ_UINT32 x0b = bandno & 1;
     OPJ_UINT32 y0b = bandno >> 1;
     OPJ_UINT32 tbx0 = (nb == 0) ? tcx0 :
@@ -2657,20 +2501,11 @@ OPJ_BOOL opj_tcd_is_subband_area_of_interest(opj_tcd_t *tcd,
     return intersects;
 }
 
-/** Returns whether a tile componenent is fully decoded, taking into account
- * p_tcd->win_* members.
- *
- * @param p_tcd    TCD handle.
- * @param compno Component number
- * @return OPJ_TRUE whether the tile componenent is fully decoded
- */
 static OPJ_BOOL opj_tcd_is_whole_tilecomp_decoding(opj_tcd_t *p_tcd,
         OPJ_UINT32 compno)
 {
     opj_tcd_tilecomp_t* tilec = &(p_tcd->tcd_image->tiles->comps[compno]);
     opj_image_comp_t* image_comp = &(p_tcd->image->comps[compno]);
-    /* Compute the intersection of the area of interest, expressed in tile coordinates */
-    /* with the tile coordinates */
     OPJ_UINT32 tcx0 = opj_uint_max(
                           (OPJ_UINT32)tilec->x0,
                           opj_uint_ceildiv(p_tcd->win_x0, image_comp->dx));
@@ -2685,8 +2520,6 @@ static OPJ_BOOL opj_tcd_is_whole_tilecomp_decoding(opj_tcd_t *p_tcd,
                           opj_uint_ceildiv(p_tcd->win_y1, image_comp->dy));
 
     OPJ_UINT32 shift = tilec->numresolutions - tilec->minimum_num_resolutions;
-    /* Tolerate small margin within the reduced resolution factor to consider if */
-    /* the whole tile path must be taken */
     return (tcx0 >= (OPJ_UINT32)tilec->x0 &&
             tcy0 >= (OPJ_UINT32)tilec->y0 &&
             tcx1 <= (OPJ_UINT32)tilec->x1 &&
@@ -2697,8 +2530,6 @@ static OPJ_BOOL opj_tcd_is_whole_tilecomp_decoding(opj_tcd_t *p_tcd,
               (((OPJ_UINT32)tilec->x1 - tcx1) >> shift) == 0 &&
               (((OPJ_UINT32)tilec->y1 - tcy1) >> shift) == 0)));
 }
-
-/* ----------------------------------------------------------------------- */
 
 opj_tcd_marker_info_t* opj_tcd_marker_info_create(OPJ_BOOL need_PLT)
 {
@@ -2713,8 +2544,6 @@ opj_tcd_marker_info_t* opj_tcd_marker_info_create(OPJ_BOOL need_PLT)
     return l_tcd_marker_info;
 }
 
-/* ----------------------------------------------------------------------- */
-
 void opj_tcd_marker_info_destroy(opj_tcd_marker_info_t *p_tcd_marker_info)
 {
     if (p_tcd_marker_info) {
@@ -2722,5 +2551,3 @@ void opj_tcd_marker_info_destroy(opj_tcd_marker_info_t *p_tcd_marker_info)
         opj_free(p_tcd_marker_info);
     }
 }
-
-/* ----------------------------------------------------------------------- */

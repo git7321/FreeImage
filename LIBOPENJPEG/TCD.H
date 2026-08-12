@@ -305,15 +305,6 @@ typedef struct opj_tcd_marker_info {
     OPJ_UINT32* p_packet_size;
 } opj_tcd_marker_info_t;
 
-/** @name Exported functions */
-/*@{*/
-/* ----------------------------------------------------------------------- */
-
-/**
-Dump the content of a tcd structure
-*/
-/*void tcd_dump(FILE *fd, opj_tcd_t *tcd, opj_tcd_image_t *img);*/ /* TODO MSD shoul use the new v2 structures */
-
 /**
 Create a new TCD handle
 @param p_is_decoder FIXME DOC
