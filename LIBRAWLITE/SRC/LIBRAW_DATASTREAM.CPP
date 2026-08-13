@@ -27,8 +27,8 @@
 #include "libraw/libraw_types.h"
 #include "libraw/libraw_datastream.h"
 #include <sys/stat.h>
-#include <jpeglib.h>
-#include <jerror.h>
+#include "jpeglib.h"
+#include "jerror.h"
 
 typedef struct
 {

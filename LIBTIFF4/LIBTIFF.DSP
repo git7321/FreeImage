@@ -36,8 +36,8 @@ RSC=rc.exe
 # PROP Output_Dir "."
 # PROP Intermediate_Dir "."
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MD /W3 /Gy /I "." /I "..\jpegl" /D "WIN32" /D "NDEBUG" /D WINVER=0x0400 /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "WIN32_LEAN_AND_MEAN" /D "NOCRYPT" /D "NOGDI" /D "NOSERVICE" /D "NOMCX" /D "NOIME" /D "_CTYPE_DISABLE_MACROS" /Zl /FD /Oxs /GF /GL /c
-# ADD CPP /nologo /MD /W3 /Gy /I "." /I "..\jpegl" /D "WIN32" /D "NDEBUG" /D WINVER=0x0400 /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "WIN32_LEAN_AND_MEAN" /D "NOCRYPT" /D "NOGDI" /D "NOSERVICE" /D "NOMCX" /D "NOIME" /D "_CTYPE_DISABLE_MACROS" /Zl /FD /Oxs /GF /GL /c
+# ADD BASE CPP /nologo /MD /W3 /Gy /I "." /I "..\libjpegt" /D "WIN32" /D "NDEBUG" /D WINVER=0x0400 /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "WIN32_LEAN_AND_MEAN" /D "NOCRYPT" /D "NOGDI" /D "NOSERVICE" /D "NOMCX" /D "NOIME" /D "_CTYPE_DISABLE_MACROS" /Zl /FD /Oxs /GF /GL /c
+# ADD CPP /nologo /MD /W3 /Gy /I "." /I "..\libjpegt" /D "WIN32" /D "NDEBUG" /D WINVER=0x0400 /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "WIN32_LEAN_AND_MEAN" /D "NOCRYPT" /D "NOGDI" /D "NOSERVICE" /D "NOMCX" /D "NOIME" /D "_CTYPE_DISABLE_MACROS" /Zl /FD /Oxs /GF /GL /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
