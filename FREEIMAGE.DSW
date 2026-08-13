@@ -27,7 +27,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "freeimage"=.\freeimage.DSP - Package Owner=<4>
+Project: "freeimage"=.\freeimage.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -39,7 +39,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "libjpeg"=.\JPEGl\LIBJPEG.DSP - Package Owner=<4>
+Project: "libjpegt"=.\libjpegt\libjpegt.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -51,7 +51,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "libjpeg12"=.\JPEGL\LIBJPEG12.DSP - Package Owner=<4>
+Project: "libjxr"=.\LibJXR\LIBJXR.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -63,7 +63,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "libjpeg16"=.\JPEGL\LIBJPEG16.DSP - Package Owner=<4>
+Project: "libpng"=.\PNG\LIBPNG.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -75,7 +75,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "libjxr"=.\LibJXR\LIBJXR.DSP - Package Owner=<4>
+Project: "libtiff"=.\LibTIFF4\LIBTIFF.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -87,31 +87,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "libpng"=.\PNG\LIBPNG.DSP - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
-
-Project: "libtiff"=.\LibTIFF4\LIBTIFF.DSP - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
-
-Project: "libwebp"=.\WEBP\LIBWEBP.DSP - Package Owner=<4>
+Project: "libwebp"=.\WEBP\LIBWEBP.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -135,7 +111,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "zlib"=.\ZLIB\ZLIB.DSP - Package Owner=<4>
+Project: "zlib"=.\zlib\zlib.dsp - Package Owner=<4>
 
 Package=<5>
 {{{

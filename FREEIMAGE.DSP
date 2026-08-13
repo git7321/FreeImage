@@ -38,8 +38,8 @@ RSC=rc.exe
 # PROP Intermediate_Dir "."
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MD /W3 /GX /Gy /I "." /I ".\jpegl" /I ".\LibTIFF4" /I ".\FreeImage" /I ".\FreeImageToolkit" /I ".\Metadata" /D "WIN32" /D "NDEBUG" /D WINVER=0x0400 /D "_WINDOWS" /D "_MBCS" /D "OPJ_STATIC" /D "FREEIMAGE_EXPORTS" /D "LIBRAW_NODLL" /D "ASMV" /D "__SSE2__" /D "_STATIC_CPPLIB" /D "JPEG_HAS_READ_ICC_PROFILE" /FD /Oxs /GF /GL /c
-# ADD CPP /nologo /MD /W3 /GX /Gy /I "." /I ".\jpegl" /I ".\LibTIFF4" /I ".\FreeImage" /I ".\FreeImageToolkit" /I ".\Metadata" /D "WIN32" /D "NDEBUG" /D WINVER=0x0400 /D "_WINDOWS" /D "_MBCS" /D "OPJ_STATIC" /D "FREEIMAGE_EXPORTS" /D "LIBRAW_NODLL" /D "ASMV" /D "__SSE2__" /D "_STATIC_CPPLIB" /D "JPEG_HAS_READ_ICC_PROFILE" /FD /Oxs /GF /GL /c
+# ADD BASE CPP /nologo /MD /W3 /GX /Gy /I "." /I ".\libjpegt" /I ".\LibTIFF4" /I ".\FreeImage" /I ".\FreeImageToolkit" /I ".\Metadata" /D "WIN32" /D "NDEBUG" /D WINVER=0x0400 /D "_WINDOWS" /D "_MBCS" /D "OPJ_STATIC" /D "FREEIMAGE_EXPORTS" /D "LIBRAW_NODLL" /D "ASMV" /D "__SSE2__" /D "_STATIC_CPPLIB" /D "JPEG_HAS_READ_ICC_PROFILE" /FD /Oxs /GF /GL /c
+# ADD CPP /nologo /MD /W3 /GX /Gy /I "." /I ".\libjpegt" /I ".\LibTIFF4" /I ".\FreeImage" /I ".\FreeImageToolkit" /I ".\Metadata" /D "WIN32" /D "NDEBUG" /D WINVER=0x0400 /D "_WINDOWS" /D "_MBCS" /D "OPJ_STATIC" /D "FREEIMAGE_EXPORTS" /D "LIBRAW_NODLL" /D "ASMV" /D "__SSE2__" /D "_STATIC_CPPLIB" /D "JPEG_HAS_READ_ICC_PROFILE" /FD /Oxs /GF /GL /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG" /d "WIN32" /c 1252
@@ -48,8 +48,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib .\JPEGl\LIBJPEG.lib .\JPEGl\LIBJPEG12.lib .\JPEGl\LIBJPEG16.lib .\LIBJXR\LIBJXR.lib .\LibOpenJPEG\LibOpenJPEG.lib .\LibRawLite\LibRawLite.lib .\openexr\openexr.lib .\PNG\libPNG.lib .\LibTIFF4\libTIFF.lib .\WEBP\libWEBP.lib .\zlib\zlib.lib libcpmt.lib ws2_32.lib msvcrt.lib /nologo /base:"0x787F0000" /version:5.2 /dll /debug /machine:I386 /out:"freeimage.dll" /subsystem:windows,4.0 /opt:ref,icf,nowin98 /osversion:5.2 /release /ltcg
-# ADD LINK32 kernel32.lib .\JPEGl\LIBJPEG.lib .\JPEGl\LIBJPEG12.lib .\JPEGl\LIBJPEG16.lib .\LIBJXR\LIBJXR.lib .\LibOpenJPEG\LibOpenJPEG.lib .\LibRawLite\LibRawLite.lib .\openexr\openexr.lib .\PNG\libPNG.lib .\LibTIFF4\libTIFF.lib .\WEBP\libWEBP.lib .\zlib\zlib.lib libcpmt.lib ws2_32.lib msvcxp.lib /nologo /base:"0x787F0000" /version:5.2 /dll /debug /machine:I386 /out:"freeimage.dll" /subsystem:windows,4.0 /opt:ref,icf,nowin98 /osversion:5.2 /release /ltcg
+# ADD BASE LINK32 kernel32.lib .\libjpegt\libjpegt.lib .\libjxr\libjxr.lib .\LibOpenJPEG\LibOpenJPEG.lib .\LibRawLite\LibRawLite.lib .\openexr\openexr.lib .\PNG\libPNG.lib .\LibTIFF4\libTIFF.lib .\WEBP\libWEBP.lib .\zlib\zlib.lib libcpmt.lib ws2_32.lib msvcrt.lib /nologo /base:"0x787F0000" /version:5.2 /dll /debug /machine:I386 /out:"freeimage.dll" /subsystem:windows,4.0 /opt:ref,icf,nowin98 /osversion:5.2 /release /ltcg
+# ADD LINK32 kernel32.lib .\libjpegt\libjpegt.lib .\libjxr\libjxr.lib .\LibOpenJPEG\LibOpenJPEG.lib .\LibRawLite\LibRawLite.lib .\openexr\openexr.lib .\PNG\libPNG.lib .\LibTIFF4\libTIFF.lib .\WEBP\libWEBP.lib .\zlib\zlib.lib libcpmt.lib ws2_32.lib msvcrt.lib /nologo /base:"0x787F0000" /version:5.2 /dll /debug /machine:I386 /out:"freeimage.dll" /subsystem:windows,4.0 /opt:ref,icf,nowin98 /osversion:5.2 /release /ltcg
 # Begin Target
 
 # Name "freeimage - Win32 DLL Release"
@@ -438,7 +438,7 @@ SOURCE=.\FreeImage\ZLibInterface.cpp
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=.\freeimage.RC
+SOURCE=.\freeimage.rc
 # End Source File
 # End Group
 # End Target

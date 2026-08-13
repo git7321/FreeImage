@@ -53,82 +53,42 @@ LINK32=link.exe
 # Begin Source File
 
 SOURCE=.\test\MainTestSuite.cpp
-DEP_CPP_MAINT=\
-	".\FreeImage.h"\
-	".\test\TestSuite.h"\
-	
 # End Source File
 # Begin Source File
 
 SOURCE=.\test\testChannels.cpp
-DEP_CPP_TESTC=\
-	".\FreeImage.h"\
-	".\test\TestSuite.h"\
-	
 # End Source File
 # Begin Source File
 
 SOURCE=.\test\testHeaderOnly.cpp
-DEP_CPP_TESTH=\
-	".\FreeImage.h"\
-	".\test\TestSuite.h"\
-	
 # End Source File
 # Begin Source File
 
 SOURCE=.\test\testImageType.cpp
-DEP_CPP_TESTI=\
-	".\FreeImage.h"\
-	".\test\TestSuite.h"\
-	
 # End Source File
 # Begin Source File
 
 SOURCE=.\test\testJPEG.cpp
-DEP_CPP_TESTJ=\
-	".\FreeImage.h"\
-	".\test\TestSuite.h"\
-	
 # End Source File
 # Begin Source File
 
 SOURCE=.\test\testMemIO.cpp
-DEP_CPP_TESTM=\
-	".\FreeImage.h"\
-	".\test\TestSuite.h"\
-	
 # End Source File
 # Begin Source File
 
 SOURCE=.\test\testMPage.cpp
-DEP_CPP_TESTMP=\
-	".\FreeImage.h"\
-	".\test\TestSuite.h"\
-	
 # End Source File
 # Begin Source File
 
 SOURCE=.\test\testMPageMemory.cpp
-DEP_CPP_TESTMPA=\
-	".\FreeImage.h"\
-	".\test\TestSuite.h"\
-	
 # End Source File
 # Begin Source File
 
 SOURCE=.\test\testMPageStream.cpp
-DEP_CPP_TESTMPAG=\
-	".\FreeImage.h"\
-	".\test\TestSuite.h"\
-	
 # End Source File
 # Begin Source File
 
 SOURCE=.\test\testPlugins.cpp
-DEP_CPP_TESTP=\
-	".\FreeImage.h"\
-	".\test\TestSuite.h"\
-	
 # End Source File
 # Begin Source File
 
@@ -137,26 +97,14 @@ SOURCE=.\test\TestSuite.h
 # Begin Source File
 
 SOURCE=.\test\testThumbnail.cpp
-DEP_CPP_TESTT=\
-	".\FreeImage.h"\
-	".\test\TestSuite.h"\
-	
 # End Source File
 # Begin Source File
 
 SOURCE=.\test\testTools.cpp
-DEP_CPP_TESTTO=\
-	".\FreeImage.h"\
-	".\test\TestSuite.h"\
-	
 # End Source File
 # Begin Source File
 
 SOURCE=.\test\testWrappedBuffer.cpp
-DEP_CPP_TESTW=\
-	".\FreeImage.h"\
-	".\test\TestSuite.h"\
-	
 # End Source File
 # End Target
 # End Project
