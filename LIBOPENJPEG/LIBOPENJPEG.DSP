@@ -60,13 +60,13 @@ LINK32=link.exe
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "..\"
-# PROP BASE Intermediate_Dir "..\"
+# PROP BASE Output_Dir "."
+# PROP BASE Intermediate_Dir "."
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "..\"
-# PROP Intermediate_Dir "..\"
+# PROP Output_Dir "."
+# PROP Intermediate_Dir "."
 # PROP Target_Dir ""
 MTL=midl.exe
 # ADD BASE MTL /nologo /win32
