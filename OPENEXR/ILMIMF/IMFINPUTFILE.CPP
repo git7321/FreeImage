@@ -559,10 +559,6 @@ InputFile::initialize ()
             _data->sFile = new ScanLineInputFile (_data->header,
                                                   _data->_streamData->is,
                                                   _data->numThreads);
-        }else{
-            // type set but not recognised
-            
-            THROW(IEX_NAMESPACE::ArgExc, "InputFile cannot handle parts of type " << _data->header.type());
         }
     }
     else
@@ -596,9 +592,6 @@ InputFile::initialize ()
         else if(!_data->header.hasType() || _data->header.type()==SCANLINEIMAGE)
         {
             _data->sFile = new ScanLineInputFile (_data->part);
-        }else{
-            THROW(IEX_NAMESPACE::ArgExc, "InputFile cannot handle parts of type " << _data->header.type());
-            
         }
     }
 }
