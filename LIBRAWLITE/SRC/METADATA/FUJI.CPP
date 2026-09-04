@@ -1324,6 +1324,7 @@ void LibRaw::parse_fuji(INT64 offset)
         uchar RAFDataHeader[16];
         libraw_internal_data.unpacker_data.posRAFData = save;
         libraw_internal_data.unpacker_data.lenRAFData = (len >> 1);
+	memset(RAFDataHeader, 0, sizeof(RAFDataHeader));
         fread(RAFDataHeader, sizeof RAFDataHeader, 1, ifp);
         offsetWH_inRAFData = guess_RAFDataGeneration(RAFDataHeader);
         fseek(ifp, offsetWH_inRAFData-int(sizeof RAFDataHeader), SEEK_CUR);
@@ -1332,16 +1333,6 @@ void LibRaw::parse_fuji(INT64 offset)
              i++) {
           imFuji.RAFData_ImageSizeTable[i] = get4();
         }
-
-//         if ((width > raw_width)
-//             || (raw_inset_present && (width < imgdata.sizes.raw_inset_crops[0].cwidth))
-//         )
-//           width = raw_width;
-//         if ((height > raw_height)
-//             || (raw_inset_present && (height < imgdata.sizes.raw_inset_crops[0].cheight))
-//         )
-//           height = raw_height;
-//
 
       }
       else if (len == 4096) // X-A3, X-A5, X-A7, X-A10, X-A20, X-T100, X-T200, XF10
