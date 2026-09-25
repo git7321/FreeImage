@@ -4043,7 +4043,7 @@ TIFFReadDirectory(TIFF* tif)
 		      (tif->tif_dir.td_compression == COMPRESSION_NONE && \
 		       (tif->tif_dir.td_stripoffset[0] <= TIFFGetFileSize(tif) && \
 		        tif->tif_dir.td_stripbytecount[0] > TIFFGetFileSize(tif) - tif->tif_dir.td_stripoffset[0])) || \
-		      (tif->tif_mode == O_RDONLY && \
+		      (tif->tif_mode == _O_RDONLY && \
 		       tif->tif_dir.td_compression == COMPRESSION_NONE && \
 		       tif->tif_dir.td_stripbytecount[0] < TIFFScanlineSize64(tif) * tif->tif_dir.td_imagelength) )
 
@@ -5537,7 +5537,7 @@ ChopUpSingleUncompressedStrip(TIFF* tif)
         /* On a newly created file, just re-opened to be filled, we */
         /* don't want strip chop to trigger as it is going to cause issues */
         /* later ( StripOffsets and StripByteCounts improperly filled) . */
-        if( bytecount == 0 && tif->tif_mode != O_RDONLY )
+        if( bytecount == 0 && tif->tif_mode != _O_RDONLY )
             return;
 	offset = td->td_stripoffset[0];
 	assert(td->td_planarconfig == PLANARCONFIG_CONTIG);
@@ -5574,7 +5574,7 @@ ChopUpSingleUncompressedStrip(TIFF* tif)
 
         /* If we are going to allocate a lot of memory, make sure that the */
         /* file is as big as needed */
-        if( tif->tif_mode == O_RDONLY &&
+        if( tif->tif_mode == _O_RDONLY &&
             nstrips > 1000000 &&
             (offset >= TIFFGetFileSize(tif) ||
              stripbytes > (TIFFGetFileSize(tif) - offset) / (nstrips - 1)) )

@@ -663,7 +663,7 @@ void 	LibRaw::libraw_swab(void *arr, int len)
 		array++;
 	}
 #else
-	swab((char*)arr,(char*)arr,len);
+	_swab((char*)arr,(char*)arr,len);
 #endif
 
 }

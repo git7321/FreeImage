@@ -1249,7 +1249,7 @@ TIFFStartTile(TIFF* tif, uint32 tile)
 static int
 TIFFCheckRead(TIFF* tif, int tiles)
 {
-	if (tif->tif_mode == O_WRONLY) {
+	if (tif->tif_mode == _O_WRONLY) {
 		return (0);
 	}
 	if (tiles ^ isTiled(tif)) {

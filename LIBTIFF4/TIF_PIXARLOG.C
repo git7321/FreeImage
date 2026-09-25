@@ -1272,7 +1272,7 @@ PixarLogCleanup(TIFF* tif)
 	if (sp->ToLinear16) _TIFFfree(sp->ToLinear16);
 	if (sp->ToLinear8) _TIFFfree(sp->ToLinear8);
 	if (sp->state&PLSTATE_INIT) {
-		if (tif->tif_mode == O_RDONLY)
+		if (tif->tif_mode == _O_RDONLY)
 			inflateEnd(&sp->stream);
 		else
 			deflateEnd(&sp->stream);
@@ -1295,7 +1295,7 @@ PixarLogVSetField(TIFF* tif, uint32 tag, va_list ap)
     switch (tag) {
      case TIFFTAG_PIXARLOGQUALITY:
 		sp->quality = (int) va_arg(ap, int);
-		if (tif->tif_mode != O_RDONLY && (sp->state&PLSTATE_INIT)) {
+		if (tif->tif_mode != _O_RDONLY && (sp->state&PLSTATE_INIT)) {
 			if (deflateParams(&sp->stream,
 			    sp->quality, Z_DEFAULT_STRATEGY) != Z_OK) {
 				return (0);

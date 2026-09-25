@@ -363,7 +363,7 @@ _TIFFVSetField(TIFF* tif, uint32 tag, va_list ap)
 	case TIFFTAG_TILEWIDTH:
 		v32 = (uint32) va_arg(ap, uint32);
 		if (v32 % 16) {
-			if (tif->tif_mode != O_RDONLY)
+			if (tif->tif_mode != _O_RDONLY)
 				goto badvalue32;
 		}
 		td->td_tilewidth = v32;
@@ -372,7 +372,7 @@ _TIFFVSetField(TIFF* tif, uint32 tag, va_list ap)
 	case TIFFTAG_TILELENGTH:
 		v32 = (uint32) va_arg(ap, uint32);
 		if (v32 % 16) {
-			if (tif->tif_mode != O_RDONLY)
+			if (tif->tif_mode != _O_RDONLY)
 				goto badvalue32;
 		}
 		td->td_tilelength = v32;
@@ -1583,7 +1583,7 @@ TIFFUnlinkDirectory(TIFF* tif, uint16 dirn)
 	uint64 off;
 	uint16 n;
 
-	if (tif->tif_mode == O_RDONLY) {
+	if (tif->tif_mode == _O_RDONLY) {
 		return (0);
 	}
 	/*

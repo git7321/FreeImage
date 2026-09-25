@@ -51,8 +51,8 @@ it under the terms of the one of two licenses as you choose:
 #pragma comment(lib, "ws2_32.lib")
 #endif
 #define snprintf _snprintf
-#define strcasecmp stricmp
-#define strncasecmp strnicmp
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
 #else
 #include <unistd.h>
 #include <utime.h>

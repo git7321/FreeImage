@@ -264,18 +264,18 @@ TIFFOpen(const char* name, const char* mode)
 	m = _TIFFgetMode(mode, module);
 
 	switch(m) {
-		case O_RDONLY:			dwMode = OPEN_EXISTING; break;
-		case O_RDWR:			dwMode = OPEN_ALWAYS;   break;
-		case O_RDWR|O_CREAT:		dwMode = OPEN_ALWAYS;   break;
-		case O_RDWR|O_TRUNC:		dwMode = CREATE_ALWAYS; break;
-		case O_RDWR|O_CREAT|O_TRUNC:	dwMode = CREATE_ALWAYS; break;
+		case _O_RDONLY:			dwMode = OPEN_EXISTING; break;
+		case _O_RDWR:			dwMode = OPEN_ALWAYS;   break;
+		case _O_RDWR|_O_CREAT:		dwMode = OPEN_ALWAYS;   break;
+		case _O_RDWR|_O_TRUNC:		dwMode = CREATE_ALWAYS; break;
+		case _O_RDWR|_O_CREAT|_O_TRUNC:	dwMode = CREATE_ALWAYS; break;
 		default:			return ((TIFF*)0);
 	}
         
 	fd = (thandle_t)CreateFileA(name,
-		(m == O_RDONLY)?GENERIC_READ:(GENERIC_READ | GENERIC_WRITE),
+		(m == _O_RDONLY)?GENERIC_READ:(GENERIC_READ | GENERIC_WRITE),
 		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, dwMode,
-		(m == O_RDONLY)?FILE_ATTRIBUTE_READONLY:FILE_ATTRIBUTE_NORMAL,
+		(m == _O_RDONLY)?FILE_ATTRIBUTE_READONLY:FILE_ATTRIBUTE_NORMAL,
 		NULL);
 	if (fd == INVALID_HANDLE_VALUE) {
 		return ((TIFF *)0);
@@ -304,18 +304,18 @@ TIFFOpenW(const wchar_t* name, const char* mode)
 	m = _TIFFgetMode(mode, module);
 
 	switch(m) {
-		case O_RDONLY:			dwMode = OPEN_EXISTING; break;
-		case O_RDWR:			dwMode = OPEN_ALWAYS;   break;
-		case O_RDWR|O_CREAT:		dwMode = OPEN_ALWAYS;   break;
-		case O_RDWR|O_TRUNC:		dwMode = CREATE_ALWAYS; break;
-		case O_RDWR|O_CREAT|O_TRUNC:	dwMode = CREATE_ALWAYS; break;
+		case _O_RDONLY:			dwMode = OPEN_EXISTING; break;
+		case _O_RDWR:			dwMode = OPEN_ALWAYS;   break;
+		case _O_RDWR|_O_CREAT:		dwMode = OPEN_ALWAYS;   break;
+		case _O_RDWR|_O_TRUNC:		dwMode = CREATE_ALWAYS; break;
+		case _O_RDWR|_O_CREAT|_O_TRUNC:	dwMode = CREATE_ALWAYS; break;
 		default:			return ((TIFF*)0);
 	}
 
 	fd = (thandle_t)CreateFileW(name,
-		(m == O_RDONLY)?GENERIC_READ:(GENERIC_READ|GENERIC_WRITE),
+		(m == _O_RDONLY)?GENERIC_READ:(GENERIC_READ|GENERIC_WRITE),
 		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, dwMode,
-		(m == O_RDONLY)?FILE_ATTRIBUTE_READONLY:FILE_ATTRIBUTE_NORMAL,
+		(m == _O_RDONLY)?FILE_ATTRIBUTE_READONLY:FILE_ATTRIBUTE_NORMAL,
 		NULL);
 	if (fd == INVALID_HANDLE_VALUE) {
 		return ((TIFF *)0);

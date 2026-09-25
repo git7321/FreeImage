@@ -323,7 +323,7 @@ Load(FreeImageIO *io, fi_handle handle, int page, int flags, void *data) {
 		if (faxTIFF == NULL) {
 			throw "Can not create fake input file";
 		}
-		TIFFSetMode(faxTIFF, O_RDONLY);
+		TIFFSetMode(faxTIFF, _O_RDONLY);
 		TIFFSetField(faxTIFF, TIFFTAG_IMAGEWIDTH, xsize);
 		TIFFSetField(faxTIFF, TIFFTAG_SAMPLESPERPIXEL, 1);
 		TIFFSetField(faxTIFF, TIFFTAG_BITSPERSAMPLE, 1);

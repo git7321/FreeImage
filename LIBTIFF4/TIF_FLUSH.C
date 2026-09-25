@@ -30,7 +30,7 @@
 int
 TIFFFlush(TIFF* tif)
 {
-    if( tif->tif_mode == O_RDONLY )
+    if( tif->tif_mode == _O_RDONLY )
         return 1;
 
     if (!TIFFFlushData(tif))
@@ -43,7 +43,7 @@ TIFFFlush(TIFF* tif)
                 
     if( (tif->tif_flags & TIFF_DIRTYSTRIP)
         && !(tif->tif_flags & TIFF_DIRTYDIRECT) 
-        && tif->tif_mode == O_RDWR )
+        && tif->tif_mode == _O_RDWR )
     {
         uint64  *offsets=NULL, *sizes=NULL;
 

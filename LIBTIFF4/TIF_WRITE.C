@@ -545,7 +545,7 @@ TIFFSetupStrips(TIFF* tif)
 int
 TIFFWriteCheck(TIFF* tif, int tiles, const char* module)
 {
-	if (tif->tif_mode == O_RDONLY) {
+	if (tif->tif_mode == _O_RDONLY) {
 		return (0);
 	}
 	if (tiles ^ isTiled(tif)) {

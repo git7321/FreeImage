@@ -47,7 +47,7 @@ TIFFCleanup(TIFF* tif)
 	/*
          * Flush buffered data and directory (if dirty).
          */
-	if (tif->tif_mode != O_RDONLY)
+	if (tif->tif_mode != _O_RDONLY)
 		TIFFFlush(tif);
 	(*tif->tif_cleanup)(tif);
 	TIFFFreeDirectory(tif);
