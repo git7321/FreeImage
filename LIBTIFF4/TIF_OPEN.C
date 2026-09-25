@@ -50,15 +50,15 @@ _TIFFgetMode(const char* mode, const char* module)
 
 	switch (mode[0]) {
 	case 'r':
-		m = O_RDONLY;
+		m = _O_RDONLY;
 		if (mode[1] == '+')
-			m = O_RDWR;
+			m = _O_RDWR;
 		break;
 	case 'w':
 	case 'a':
-		m = O_RDWR|O_CREAT;
+		m = _O_RDWR|_O_CREAT;
 		if (mode[0] == 'w')
-			m |= O_TRUNC;
+			m |= _O_TRUNC;
 		break;
 	default:
 		TIFFErrorExt(0, module, "\"%s\": Bad mode", mode);
@@ -121,7 +121,7 @@ TIFFClientOpen(
 	_TIFFmemset(tif, 0, sizeof (*tif));
 	tif->tif_name = (char *)tif + sizeof (TIFF);
 	strcpy(tif->tif_name, name);
-	tif->tif_mode = m &~ (O_CREAT|O_TRUNC);
+	tif->tif_mode = m &~ (_O_CREAT|_O_TRUNC);
 	tif->tif_curdir = (uint16) -1;		/* non-existent directory */
 	tif->tif_curoff = 0;
 	tif->tif_curstrip = (uint32) -1;	/* invalid strip */
@@ -150,11 +150,11 @@ TIFFClientOpen(
 	 * a file is opened read-only.
 	 */
 	tif->tif_flags = FILLORDER_MSB2LSB;
-	if (m == O_RDONLY )
+	if (m == _O_RDONLY )
 		tif->tif_flags |= TIFF_MAPPED;
 
 	#ifdef STRIPCHOP_DEFAULT
-	if (m == O_RDONLY || m == O_RDWR)
+	if (m == _O_RDONLY || m == _O_RDWR)
 		tif->tif_flags |= STRIPCHOP_DEFAULT;
 	#endif
 
@@ -214,13 +214,13 @@ TIFFClientOpen(
 		switch (*cp) {
 			case 'b':
 				#ifndef WORDS_BIGENDIAN
-				if (m&O_CREAT)
+				if (m&_O_CREAT)
 					tif->tif_flags |= TIFF_SWAB;
 				#endif
 				break;
 			case 'l':
 				#ifdef WORDS_BIGENDIAN
-				if ((m&O_CREAT))
+				if ((m&_O_CREAT))
 					tif->tif_flags |= TIFF_SWAB;
 				#endif
 				break;
@@ -237,35 +237,35 @@ TIFFClientOpen(
 				    HOST_FILLORDER;
 				break;
 			case 'M':
-				if (m == O_RDONLY)
+				if (m == _O_RDONLY)
 					tif->tif_flags |= TIFF_MAPPED;
 				break;
 			case 'm':
-				if (m == O_RDONLY)
+				if (m == _O_RDONLY)
 					tif->tif_flags &= ~TIFF_MAPPED;
 				break;
 			case 'C':
-				if (m == O_RDONLY)
+				if (m == _O_RDONLY)
 					tif->tif_flags |= TIFF_STRIPCHOP;
 				break;
 			case 'c':
-				if (m == O_RDONLY)
+				if (m == _O_RDONLY)
 					tif->tif_flags &= ~TIFF_STRIPCHOP;
 				break;
 			case 'h':
 				tif->tif_flags |= TIFF_HEADERONLY;
 				break;
 			case '8':
-				if (m&O_CREAT)
+				if (m&_O_CREAT)
 					tif->tif_flags |= TIFF_BIGTIFF;
 				break;
 		}
 	/*
 	 * Read in TIFF header.
 	 */
-	if ((m & O_TRUNC) ||
+	if ((m & _O_TRUNC) ||
 	    !ReadOK(tif, &tif->tif_header, sizeof (TIFFHeaderClassic))) {
-		if (tif->tif_mode == O_RDONLY) {
+		if (tif->tif_mode == _O_RDONLY) {
 			goto bad;
 		}
 		/*
@@ -451,7 +451,7 @@ TIFFClientOpen(
 			return (tif);
 	}
 bad:
-	tif->tif_mode = O_RDONLY;	/* XXX avoid flush */
+	tif->tif_mode = _O_RDONLY;	/* XXX avoid flush */
         TIFFCleanup(tif);
 bad2:
 	return ((TIFF*)0);
