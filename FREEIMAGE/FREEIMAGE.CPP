@@ -117,7 +117,7 @@ FreeImage_SetOutputMessageStdCall(FreeImage_OutputMessageFunctionStdCall omf) {
 	freeimage_outputmessagestdcall_proc = omf;
 }
 
-void DLL_CALLCONV
+void __cdecl
 FreeImage_OutputMessageProc(int fif, const char *fmt, ...) {
 	const int MSG_SIZE = 512; // 512 bytes should be more than enough for a short message
 

@@ -758,7 +758,7 @@ typedef void (DLL_CALLCONV *FreeImage_OutputMessageFunctionStdCall)(FREE_IMAGE_F
 
 DLL_API void DLL_CALLCONV FreeImage_SetOutputMessageStdCall(FreeImage_OutputMessageFunctionStdCall omf);
 DLL_API void DLL_CALLCONV FreeImage_SetOutputMessage(FreeImage_OutputMessageFunction omf);
-DLL_API void DLL_CALLCONV FreeImage_OutputMessageProc(int fif, const char *fmt, ...);
+DLL_API void __cdecl FreeImage_OutputMessageProc(int fif, const char *fmt, ...);
 
 // Allocate / Clone / Unload routines ---------------------------------------
 
