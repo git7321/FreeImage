@@ -17,22 +17,27 @@
  */
 
 #include "../../internal/dcraw_defs.h"
+#include <math.h>
 
-ushort LibRaw::sget2Rev(uchar *s) // specific to some Canon Makernotes fields,
-                                  // where they have endian in reverse
+#if defined(_MSC_VER) && (_MSC_VER <= 1600) 
+#include <float.h>
+#define isnan(a) _isnan(a)
+#define isinf(x) (!_finite(x) && !_isnan(x))
+#endif
+
+ushort LibRaw::sget2Rev(uchar *s)
 {
-  if (order == 0x4d4d) /* "II" means little-endian, and we reverse to "MM" - big
-                          endian */
+  if (order == 0x4d4d)
     return s[0] | s[1] << 8;
-  else /* "MM" means big-endian... */
+  else
     return s[0] << 8 | s[1];
 }
 
 ushort libraw_sget2_static(short _order, uchar *s)
 {
-    if (_order == 0x4949) /* "II" means little-endian */
+    if (_order == 0x4949)
         return s[0] | s[1] << 8;
-    else /* "MM" means big-endian */
+    else
         return s[0] << 8 | s[1];
 }
 
@@ -40,7 +45,6 @@ ushort LibRaw::sget2(uchar *s)
 {
     return libraw_sget2_static(order, s);
 }
-
 
 ushort LibRaw::get2()
 {
@@ -53,7 +57,6 @@ unsigned LibRaw::sget4(uchar *s)
 {
     return libraw_sget4_static(order, s);
 }
-
 
 unsigned libraw_sget4_static(short _order, uchar *s)
 {
@@ -79,6 +82,8 @@ float libraw_int_to_float(int i)
     float f;
   } u;
   u.i = i;
+  if (isnan(u.f) || isinf(u.f))
+	  return 0.f;
   return u.f;
 }
 
@@ -98,7 +103,7 @@ double LibRaw::getreal(int type)
     return (unsigned short)get2();
   case LIBRAW_EXIFTAG_TYPE_LONG:
     return (unsigned int)get4();
-  case LIBRAW_EXIFTAG_TYPE_RATIONAL: // (unsigned, unsigned)
+  case LIBRAW_EXIFTAG_TYPE_RATIONAL:
     u.d = (unsigned int)get4();
     v.d = (unsigned int)get4();
     return u.d / (v.d ? v.d : 1);
@@ -106,7 +111,7 @@ double LibRaw::getreal(int type)
     return (signed short)get2();
   case LIBRAW_EXIFTAG_TYPE_SLONG:
     return (signed int)get4();
-  case LIBRAW_EXIFTAG_TYPE_SRATIONAL: // (int, int)
+  case LIBRAW_EXIFTAG_TYPE_SRATIONAL:
     u.d = (signed int)get4();
     v.d = (signed int)get4();
     return u.d / (v.d ? v.d : 1);
@@ -116,6 +121,8 @@ double LibRaw::getreal(int type)
     rev = 7 * ((order == 0x4949) == (ntohs(0x1234) == 0x1234));
     for (i = 0; i < 8; i++)
       u.c[i ^ rev] = fgetc(ifp);
+    if (isnan(u.d) || isinf(u.d))
+      return 0.f;
     return u.d;
   default:
     return fgetc(ifp);
@@ -126,7 +133,6 @@ double LibRaw::sgetreal(int type, uchar *s)
 {
     return libraw_sgetreal_static(order, type, s);
 }
-
 
 double libraw_sgetreal_static(short _order, int type, uchar *s)
 {
@@ -142,7 +148,7 @@ double libraw_sgetreal_static(short _order, int type, uchar *s)
     return (unsigned short) libraw_sget2_static(_order,s);
   case LIBRAW_EXIFTAG_TYPE_LONG:
       return (unsigned int)libraw_sget4_static(_order, s);
-  case LIBRAW_EXIFTAG_TYPE_RATIONAL: // (unsigned, unsigned)
+  case LIBRAW_EXIFTAG_TYPE_RATIONAL:
     u.d = (unsigned int)libraw_sget4_static(_order,s);
     v.d = (unsigned int)libraw_sget4_static(_order,s+4);
     return u.d / (v.d ? v.d : 1);
@@ -150,7 +156,7 @@ double libraw_sgetreal_static(short _order, int type, uchar *s)
     return (signed short)libraw_sget2_static(_order,s);
   case LIBRAW_EXIFTAG_TYPE_SLONG:
     return (signed int) libraw_sget4_static(_order,s);
-  case LIBRAW_EXIFTAG_TYPE_SRATIONAL: // (int, int)
+  case LIBRAW_EXIFTAG_TYPE_SRATIONAL:
     u.d = (signed int)libraw_sget4_static(_order,s);
     v.d = (signed int)libraw_sget4_static(_order,s+4);
     return u.d / (v.d ? v.d : 1);
@@ -159,13 +165,12 @@ double libraw_sgetreal_static(short _order, int type, uchar *s)
   case LIBRAW_EXIFTAG_TYPE_DOUBLE:
     rev = 7 * ((_order == 0x4949) == (ntohs(0x1234) == 0x1234));
     for (i = 0; i < 8; i++)
-      u.c[i ^ rev] = *(s+1);
+      u.c[i ^ rev] = *(s+i);
     return u.d;
   default:
-    return *(s+1);
+    return *s;
   }
 }
-
 
 void LibRaw::read_shorts(ushort *pixel, unsigned count)
 {

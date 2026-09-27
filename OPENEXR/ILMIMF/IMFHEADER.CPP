@@ -255,10 +255,6 @@ Header::operator = (const Header &other)
 void
 Header::erase (const char name[])
 {
-    if (name[0] == 0)
-        THROW (IEX_NAMESPACE::ArgExc, "Image attribute name cannot be an empty string.");
-    
-    
     AttributeMap::iterator i = _map.find (name);
     if (i != _map.end())
         _map.erase (i);
@@ -276,9 +272,6 @@ Header::erase (const string &name)
 void
 Header::insert (const char name[], const Attribute &attribute)
 {
-    if (name[0] == 0)
-	THROW (IEX_NAMESPACE::ArgExc, "Image attribute name cannot be an empty string.");
-
     AttributeMap::iterator i = _map.find (name);
 
     if (i == _map.end())

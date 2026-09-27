@@ -600,8 +600,6 @@ LibRaw_windows_datastream::LibRaw_windows_datastream(const TCHAR *sFile)
   HANDLE hFile = CreateFile(sFile, GENERIC_READ, 0, 0, OPEN_EXISTING,
                             FILE_ATTRIBUTE_NORMAL, 0);
 #endif
-  if (hFile == INVALID_HANDLE_VALUE)
-    throw std::runtime_error("failed to open the file");
 
   try
   {
@@ -613,13 +611,10 @@ LibRaw_windows_datastream::LibRaw_windows_datastream(const TCHAR *sFile)
     throw;
   }
 
-  CloseHandle(hFile); // windows will defer the actual closing of this handle
-                      // until the hMap_ is closed
+  CloseHandle(hFile);
   reconstruct_base();
 }
 
-// ctor: construct with a file handle - caller is responsible for closing the
-// file handle
 LibRaw_windows_datastream::LibRaw_windows_datastream(HANDLE hFile)
     : LibRaw_buffer_datastream(NULL, 0), hMap_(0), pView_(NULL)
 {
@@ -627,7 +622,6 @@ LibRaw_windows_datastream::LibRaw_windows_datastream(HANDLE hFile)
   reconstruct_base();
 }
 
-// dtor: unmap and close the mapping handle
 LibRaw_windows_datastream::~LibRaw_windows_datastream()
 {
   if (pView_ != NULL)
@@ -639,32 +633,20 @@ LibRaw_windows_datastream::~LibRaw_windows_datastream()
 
 void LibRaw_windows_datastream::Open(HANDLE hFile)
 {
-  // create a file mapping handle on the file handle
   hMap_ = ::CreateFileMapping(hFile, 0, PAGE_READONLY, 0, 0, 0);
-  if (hMap_ == NULL)
-    throw std::runtime_error("failed to create file mapping");
-
-  // now map the whole file base view
-  if (!::GetFileSizeEx(hFile, (PLARGE_INTEGER)&cbView_))
-    throw std::runtime_error("failed to get the file size");
-
   pView_ = ::MapViewOfFile(hMap_, FILE_MAP_READ, 0, 0, (size_t)cbView_);
-  if (pView_ == NULL)
-    throw std::runtime_error("failed to map the file");
 }
 
 #endif
 
 #if defined (LIBRAW_NO_IOSTREAMS_DATASTREAM)  && defined (LIBRAW_WIN32_CALLS)
 
-/* LibRaw_bigfile_buffered_datastream: copypasted from LibRaw_bigfile_datastream + extra cache on read */
-
 #undef LR_BF_CHK
 #define LR_BF_CHK()                                                    \
-  do                                                                    \
-  {                                                                     \
-     if (fhandle ==0 || fhandle == INVALID_HANDLE_VALUE)                \
-         throw LIBRAW_EXCEPTION_IO_EOF;                                 \
+  do                                                                   \
+  {                                                                    \
+     if (fhandle ==0 || fhandle == INVALID_HANDLE_VALUE)               \
+         throw LIBRAW_EXCEPTION_IO_EOF;                                \
   } while (0)
 
 #define LIBRAW_BUFFER_ALIGN 4096

@@ -580,10 +580,6 @@ FastHufDecoder::decode
      unsigned short *dst, 
      int numDstElems)
 {
-    if (numSrcBits < 128)
-        throw Iex::InputExc ("Error choosing Huffman decoder implementation "
-                             "(insufficient number of bits).");
-
     //
     // Current position (byte/bit) in the src data stream
     // (after the first buffer fill)
