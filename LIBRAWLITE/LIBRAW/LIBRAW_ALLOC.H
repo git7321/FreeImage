@@ -34,20 +34,18 @@ public:
   {
     size_t alloc_sz = LIBRAW_MSIZE * sizeof(void *);
     mems = (void **)::malloc(alloc_sz);
-    memset(mems, 0, alloc_sz);
+	if(mems)
+		memset(mems, 0, alloc_sz);
   }
   ~libraw_memmgr()
   {
     cleanup();
-    ::free(mems);
+	if(mems)
+		::free(mems);
   }
   void *malloc(size_t sz)
   {
-#ifdef LIBRAW_USE_CALLOC_INSTEAD_OF_MALLOC
     void *ptr = ::calloc(1, sz + extra_bytes);
-#else
-    void *ptr = ::malloc(sz + extra_bytes);
-#endif
     mem_ptr(ptr);
     return ptr;
   }
@@ -71,6 +69,7 @@ public:
   }
   void cleanup(void)
   {
+	if (!mems) return;
     for (int i = 0; i < LIBRAW_MSIZE; i++)
       if (mems[i])
       {
@@ -84,8 +83,9 @@ private:
   unsigned extra_bytes;
   void mem_ptr(void *ptr)
   {
+	  if (!mems) return;
 #if defined(LIBRAW_USE_OPENMP)
-      bool ok = false; /* do not return from critical section */
+      bool ok = false;
 #endif
 
 #if defined(LIBRAW_USE_OPENMP)
@@ -107,7 +107,6 @@ private:
                   }
 #ifdef LIBRAW_MEMPOOL_CHECK
 #if !defined(LIBRAW_USE_OPENMP)
-              /* remember ptr in last mems item to be free'ed at cleanup */
               if (!mems[LIBRAW_MSIZE - 1])
                   mems[LIBRAW_MSIZE - 1] = ptr;
               throw LIBRAW_EXCEPTION_MEMPOOL;
@@ -126,6 +125,7 @@ private:
   }
   void forget_ptr(void *ptr)
   {
+	if (!mems) return;
 #if defined(LIBRAW_USE_OPENMP)
 #pragma omp critical
     {
