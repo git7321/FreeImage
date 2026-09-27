@@ -623,9 +623,6 @@ Header::typedAttribute (const char name[])
     Attribute *attr = &(*this)[name];
     T *tattr = dynamic_cast <T*> (attr);
 
-    if (tattr == 0)
-	throw IEX_NAMESPACE::TypeExc ("Unexpected attribute type.");
-
     return *tattr;
 }
 
@@ -636,9 +633,6 @@ Header::typedAttribute (const char name[]) const
 {
     const Attribute *attr = &(*this)[name];
     const T *tattr = dynamic_cast <const T*> (attr);
-
-    if (tattr == 0)
-	throw IEX_NAMESPACE::TypeExc ("Unexpected attribute type.");
 
     return *tattr;
 }

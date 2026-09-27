@@ -1128,10 +1128,6 @@ DeepTiledOutputFile::DeepTiledOutputFile(const OutputPartData* part)
    
     try
     {
-        if (part->header.type() != DEEPTILE)
-            throw IEX_NAMESPACE::ArgExc("Can't build a DeepTiledOutputFile from "
-                              "a type-mismatched part.");
-
         _data = new Data (part->numThreads);
         _data->_streamData=part->mutex;
         _data->_deleteStream=false;

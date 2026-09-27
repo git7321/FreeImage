@@ -826,10 +826,6 @@ void DeepScanLineInputFile::initialize(const Header& header)
 {
     try
     {
-        if (header.type() != DEEPSCANLINE)
-            throw IEX_NAMESPACE::ArgExc("Can't build a DeepScanLineInputFile from "
-            "a type-mismatched part.");
-        
         if(header.version()!=1)
         {
         }

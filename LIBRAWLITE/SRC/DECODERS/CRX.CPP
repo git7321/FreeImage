@@ -2036,7 +2036,7 @@ int crxMakeQStep(CrxImage *img, CrxTile *tile, int32_t *qpTable, uint32_t /*tota
         if (quantVal / 6 >= 6)
           *qStepTbl = q_step_tbl[quantVal % 6] << ((quantVal / 6 - 6 ) & 0x1f);
         else
-          *qStepTbl = q_step_tbl[quantVal % 6] >> (6 - quantVal / 6);
+          *qStepTbl = q_step_tbl[MAX(0,quantVal % 6)] >> (6 - quantVal / 6);
       }
     }
     // continue to the next level - we always decode all levels
@@ -2056,7 +2056,7 @@ int crxMakeQStep(CrxImage *img, CrxTile *tile, int32_t *qpTable, uint32_t /*tota
         if (quantVal / 6 >= 6)
           *qStepTbl = q_step_tbl[quantVal % 6] << ((quantVal / 6 - 6) & 0x1f);
         else
-          *qStepTbl = q_step_tbl[quantVal % 6] >> (6 - quantVal / 6);
+          *qStepTbl = q_step_tbl[MAX(0,quantVal % 6)] >> (6 - quantVal / 6);
       }
     }
     // continue to the next level - we always decode all levels
@@ -2070,7 +2070,7 @@ int crxMakeQStep(CrxImage *img, CrxTile *tile, int32_t *qpTable, uint32_t /*tota
         if (*qpTable / 6 >= 6)
           *qStepTbl = q_step_tbl[*qpTable % 6] << ((*qpTable / 6 - 6) & 0x1f);
         else
-          *qStepTbl = q_step_tbl[*qpTable % 6] >> (6 - *qpTable / 6);
+          *qStepTbl = q_step_tbl[MAX(0,(*qpTable % 6))] >> (6 - *qpTable / 6);
 
     break;
   }
@@ -2265,8 +2265,9 @@ int crxReadImageHeaders(crx_data_header_t *hdr, CrxImage *img, uint8_t *mdatPtr,
 #ifdef LIBRAW_CR3_MEMPOOL
                        img->memmgr.
 #endif
-                   calloc(1, sizeof(CrxTile) * nTiles + sizeof(CrxPlaneComp) * nTiles * img->nPlanes +
-                              sizeof(CrxSubband) * nTiles * img->nPlanes * img->subbandCount);
+                   calloc(1,sizeof(CrxTile) * nTiles + sizeof(CrxPlaneComp) * nTiles * img->nPlanes +
+                              sizeof(CrxSubband) * size_t(nTiles) * size_t(img->nPlanes) * size_t(img->subbandCount)
+                          );
     if (!img->tiles)
       return -1;
 
@@ -2495,7 +2496,7 @@ int crxReadImageHeaders(crx_data_header_t *hdr, CrxImage *img, uint8_t *mdatPtr,
 }
 
 int crxSetupImageData(crx_data_header_t *hdr, CrxImage *img, int16_t *outBuf, int64_t mdatOffset, int64_t mdatSize,
-                      uint8_t *mdatHdrPtr, int32_t mdatHdrSize)
+                      uint8_t *mdatHdrPtr, int32_t mdatHdrSize, unsigned max_raw_mb)
 {
   int IncrBitTable[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0};
 
@@ -2533,11 +2534,14 @@ int crxSetupImageData(crx_data_header_t *hdr, CrxImage *img, int16_t *outBuf, in
   // left as is.
   if (img->encType == 3 && img->nPlanes == 4 && img->nBits > 8)
   {
+	  INT64 alloc_sz = INT64(img->planeHeight) * INT64(img->planeWidth) * INT64(img->nPlanes) * INT64((img->samplePrecision + 7) >> 3);
+	  if (alloc_sz > INT64(max_raw_mb) * 1024I64 * 1024I64)
+		  throw LIBRAW_EXCEPTION_TOOBIG;
       img->planeBuf = (int16_t *)
 #ifdef LIBRAW_CR3_MEMPOOL
                           img->memmgr.
 #endif
-                      malloc(img->planeHeight * img->planeWidth * img->nPlanes * ((img->samplePrecision + 7) >> 3));
+                      malloc(alloc_sz);
     if (!img->planeBuf)
       return -1;
   }
@@ -2700,7 +2704,7 @@ void LibRaw::crxLoadRaw()
   // parse and setup the image data
   if (crxSetupImageData(&hdr, &img, (int16_t *)imgdata.rawdata.raw_image,
 	  libraw_internal_data.unpacker_data.data_offset, libraw_internal_data.unpacker_data.data_size,
-	  hdrBuf.data(), hdr.mdatHdrSize))
+	  hdrBuf.data(), hdr.mdatHdrSize, imgdata.rawparams.max_raw_memory_mb))
     throw LIBRAW_EXCEPTION_IO_CORRUPT;
 
   crxLoadDecodeLoop(&img, hdr.nPlanes);

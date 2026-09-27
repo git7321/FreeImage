@@ -898,9 +898,6 @@ DeepScanLineOutputFile::DeepScanLineOutputFile(const OutputPartData* part)
 {
     try
     {
-        if (part->header.type() != DEEPSCANLINE)
-            throw IEX_NAMESPACE::ArgExc("Can't build a DeepScanLineOutputFile from a type-mismatched part.");
-
         _data = new Data (part->numThreads);
         _data->_streamData = part->mutex;
         _data->_deleteStream=false;
