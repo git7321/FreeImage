@@ -342,7 +342,6 @@ tagCompare(const void* a, const void* b)
 {
 	const TIFFField* ta = *(const TIFFField**) a;
 	const TIFFField* tb = *(const TIFFField**) b;
-	/* NB: be careful of return values for 16-bit platforms */
 	if (ta->field_tag != tb->field_tag)
 		return (int)ta->field_tag - (int)tb->field_tag;
 	else
@@ -369,7 +368,6 @@ _TIFFMergeFields(TIFF* tif, const TIFFField info[], uint32 n)
 {
 	static const char module[] = "_TIFFMergeFields";
 	static const char reason[] = "for fields array";
-	/* TIFFField** tp; */
 	uint32 i;
 
         tif->tif_foundfield = NULL;
@@ -388,19 +386,16 @@ _TIFFMergeFields(TIFF* tif, const TIFFField info[], uint32 n)
 		return 0;
 	}
 
-	/* tp = tif->tif_fields + tif->tif_nfields; */
 	for (i = 0; i < n; i++) {
 		const TIFFField *fip =
 			TIFFFindField(tif, info[i].field_tag, TIFF_ANY);
 
-                /* only add definitions that aren't already present */
 		if (!fip) {
                         tif->tif_fields[tif->tif_nfields] = (TIFFField *) (info+i);
                         tif->tif_nfields++;
                 }
 	}
 
-        /* Sort the field info by tag number */
 	qsort(tif->tif_fields, tif->tif_nfields,
 	      sizeof(TIFFField *), tagCompare);
 
@@ -458,7 +453,7 @@ TIFFDataWidth(TIFFDataType type)
 		case TIFF_IFD8:
 			return 8;
 		default:
-			return 0; /* will return 0 for unknown types */
+			return 0;
 	}
 }
 
@@ -509,11 +504,8 @@ TIFFFindField(TIFF* tif, uint32 tag, TIFFDataType dt)
 	    (dt == TIFF_ANY || dt == tif->tif_foundfield->field_type))
 		return tif->tif_foundfield;
 
-	/* If we are invoked with no field information, then just return. */
 	if (!tif->tif_fields)
 		return NULL;
-
-	/* NB: use sorted search (e.g. binary search) */
 
 	key.field_tag = tag;
 	key.field_type = dt;
@@ -535,11 +527,8 @@ _TIFFFindFieldByName(TIFF* tif, const char *field_name, TIFFDataType dt)
 	    && (dt == TIFF_ANY || dt == tif->tif_foundfield->field_type))
 		return (tif->tif_foundfield);
 
-	/* If we are invoked with no field information, then just return. */
 	if (!tif->tif_fields)
 		return NULL;
-
-	/* NB: use linear search since list is sorted by key#, not name */
 
 	key.field_name = (char *)field_name;
 	key.field_type = dt;
@@ -707,11 +696,7 @@ _TIFFCreateAnonField(TIFF *tif, uint32 tag, TIFFDataType field_type)
 	}
 	fld->field_subfields = NULL;
 
-	/* 
-	 * note that this name is a special sign to TIFFClose() and
-	 * _TIFFSetupFields() to free the field
-	 */
-	(void) snprintf(fld->field_name, 32, "Tag %d", (int) tag);
+	(void) _snprintf(fld->field_name, 32, "Tag %d", (int) tag);
 
 	return fld;    
 }
@@ -943,13 +928,9 @@ TIFFMergeFieldInfo(TIFF* tif, const TIFFFieldInfo info[], uint32 n)
 int
 _TIFFCheckFieldIsValidForCodec(TIFF *tif, ttag_t tag)
 {
-	/* Filter out non-codec specific tags */
 	switch (tag) {
-	    /* Shared tags */
 	    case TIFFTAG_PREDICTOR:
-	    /* JPEG tags */
 	    case TIFFTAG_JPEGTABLES:
-	    /* OJPEG tags */
 	    case TIFFTAG_JPEGIFOFFSET:
 	    case TIFFTAG_JPEGIFBYTECOUNT:
 	    case TIFFTAG_JPEGQTABLES:
@@ -957,7 +938,6 @@ _TIFFCheckFieldIsValidForCodec(TIFF *tif, ttag_t tag)
 	    case TIFFTAG_JPEGACTABLES:
 	    case TIFFTAG_JPEGPROC:
 	    case TIFFTAG_JPEGRESTARTINTERVAL:
-	    /* CCITT* */
 	    case TIFFTAG_BADFAXLINES:
 	    case TIFFTAG_CLEANFAXDATA:
 	    case TIFFTAG_CONSECUTIVEBADFAXLINES:
@@ -1046,13 +1026,3 @@ _TIFFCheckFieldIsValidForCodec(TIFF *tif, ttag_t tag)
 	}
 	return 0;
 }
-
-/* vim: set ts=8 sts=8 sw=8 noet: */
-
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 8
- * fill-column: 78
- * End:
- */

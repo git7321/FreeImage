@@ -68,12 +68,6 @@ Byte order
 -----------------------------------------------------------------------
 */
 
-/*
-Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
-significant byte first (like Motorola and SPARC, unlike Intel).
-Some versions of gcc may have BYTE_ORDER or __BYTE_ORDER defined
-If your big endian system isn't being detected, add an OS specific check
-*/
 #if (defined(BYTE_ORDER) && BYTE_ORDER==BIG_ENDIAN) || \
 	(defined(__BYTE_ORDER) && __BYTE_ORDER==__BIG_ENDIAN) || \
 	defined(__BIG_ENDIAN__)
@@ -90,15 +84,7 @@ If your big endian system isn't being detected, add an OS specific check
 #undef WORDS_BIGENDIAN
 /* Native cpu byte order: 1 if big-endian (Motorola) or 0 if little-endian (Intel) */
 #undef HOST_BIGENDIAN
-#endif // BYTE_ORDER
-
-#ifdef _WIN32
-/* Visual Studio 2015 / VC 14 / MSVC 19.00 finally has snprintf() */
-#if defined(_MSC_VER) && (_MSC_VER < 1900)
-#define snprintf _snprintf
-#endif // _MSC_VER
-#define lfind _lfind
-#endif // _WIN32
+#endif
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
@@ -107,6 +93,5 @@ If your big endian system isn't being detected, add an OS specific check
 #  define inline __inline
 # endif
 #endif
-
 
 #endif // TIF_CONFIG_H

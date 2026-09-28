@@ -55,14 +55,7 @@ extern void *lfind(const void *, const void *, size_t *, size_t,
 		   int (*)(const void *, const void *));
 #endif
 
-#if !defined(HAVE_SNPRINTF) && !defined(HAVE__SNPRINTF)
-#undef snprintf
-#define snprintf _TIFF_snprintf_f
-extern int snprintf(char* str, size_t size, const char* format, ...);
-#endif
-
 #include "tiffio.h"
-
 #include "tif_dir.h"
 
 #ifndef STRIP_SIZE_DEFAULT
@@ -201,13 +194,11 @@ struct tiff {
 	const TIFFField*     tif_foundfield;   /* cached pointer to already found tag */
 	TIFFTagMethods       tif_tagmethods;   /* tag get/set/print routines */
 	TIFFClientInfoLink*  tif_clientinfo;   /* extra client information. */
-	/* Backward compatibility stuff. We need these two fields for
-	 * setting up an old tag extension scheme. */
 	TIFFFieldArray*      tif_fieldscompat;
 	size_t               tif_nfieldscompat;
 };
 
-#define isPseudoTag(t) (t > 0xffff)            /* is tag value normal or pseudo */
+#define isPseudoTag(t) (t > 0xffff)        /* is tag value normal or pseudo */
 
 #define isTiled(tif) (((tif)->tif_flags & TIFF_ISTILED) != 0)
 #define isMapped(tif) (((tif)->tif_flags & TIFF_MAPPED) != 0)
@@ -243,12 +234,9 @@ struct tiff {
 	(TIFFWriteFile((tif),(buf),(size))==(size))
 #endif
 
-/* NB: the uint32 casts are to silence certain ANSI-C compilers */
 #define TIFFhowmany_32(x, y) (((uint32)x < (0xffffffff - (uint32)(y-1))) ? \
 			   ((((uint32)(x))+(((uint32)(y))-1))/((uint32)(y))) : \
 			   0U)
-/* Variant of TIFFhowmany_32() that doesn't return 0 if x close to MAXUINT. */
-/* Caution: TIFFhowmany_32_maxuint_compat(x,y)*y might overflow */
 #define TIFFhowmany_32_maxuint_compat(x, y) \
 			   (((uint32)(x) / (uint32)(y)) + ((((uint32)(x) % (uint32)(y)) != 0) ? 1 : 0))
 #define TIFFhowmany8_32(x) (((x)&0x07)?((uint32)(x)>>3)+1:(uint32)(x)>>3)
@@ -257,7 +245,6 @@ struct tiff {
 #define TIFFhowmany8_64(x) (((x)&0x07)?((uint64)(x)>>3)+1:(uint64)(x)>>3)
 #define TIFFroundup_64(x, y) (TIFFhowmany_64(x,y)*(y))
 
-/* Safe multiply which returns zero if there is an integer overflow */
 #define TIFFSafeMultiply(t,v,m) ((((t)(m) != (t)0) && (((t)(((v)*(m))/(m))) == (t)(v))) ? (t)((v)*(m)) : (t)0)
 
 #define TIFFmax(A,B) ((A)>(B)?(A):(B))
@@ -265,49 +252,24 @@ struct tiff {
 
 #define TIFFArrayCount(a) (sizeof (a) / sizeof ((a)[0]))
 
-/*
-  Support for large files.
-
-  Windows read/write APIs support only 'unsigned int' rather than 'size_t'.
-  Windows off_t is only 32-bit, even in 64-bit builds.
-*/
-#if defined(HAVE_FSEEKO)
-/*
-  Use fseeko() and ftello() if they are available since they use
-  'off_t' rather than 'long'.  It is wrong to use fseeko() and
-  ftello() only on systems with special LFS support since some systems
-  (e.g. FreeBSD) support a 64-bit off_t by default.
-
-  For MinGW, __MSVCRT_VERSION__ must be at least 0x800 to expose these
-  interfaces. The MinGW compiler must support the requested version.  MinGW
-  does not distribute the CRT (it is supplied by Microsoft) so the correct CRT
-  must be available on the target computer in order for the program to run.
-*/
 #if defined(HAVE_FSEEKO)
 #  define fseek(stream,offset,whence)  fseeko(stream,offset,whence)
 #  define ftell(stream,offset,whence)  ftello(stream,offset,whence)
-#endif
 #endif
 #if defined(__WIN32__) && \
         !(defined(_MSC_VER) && _MSC_VER < 1400) && \
         !(defined(__MSVCRT_VERSION__) && __MSVCRT_VERSION__ < 0x800)
 typedef unsigned int TIFFIOSize_t;
-#define _TIFF_lseek_f(fildes,offset,whence)  _lseeki64(fildes,/* __int64 */ offset,whence)
-/* #define _TIFF_tell_f(fildes) /\* __int64 *\/ _telli64(fildes) */
-#define _TIFF_fseek_f(stream,offset,whence) _fseeki64(stream,/* __int64 */ offset,whence)
-#define _TIFF_fstat_f(fildes,stat_buff) _fstati64(fildes,/* struct _stati64 */ stat_buff)
-/* #define _TIFF_ftell_f(stream) /\* __int64 *\/ _ftelli64(stream) */
-/* #define _TIFF_stat_f(path,stat_buff) _stati64(path,/\* struct _stati64 *\/ stat_buff) */
+#define _TIFF_lseek_f(fildes,offset,whence)  _lseeki64(fildes, offset,whence)
+#define _TIFF_fseek_f(stream,offset,whence) _fseeki64(stream, offset,whence)
+#define _TIFF_fstat_f(fildes,stat_buff) _fstati64(fildes, stat_buff)
 #define _TIFF_stat_s struct _stati64
 #define _TIFF_off_t __int64
 #else
 typedef size_t TIFFIOSize_t;
 #define _TIFF_lseek_f(fildes,offset,whence) lseek(fildes,offset,whence)
-/* #define _TIFF_tell_f(fildes) (_TIFF_lseek_f(fildes,0,SEEK_CUR)) */
 #define _TIFF_fseek_f(stream,offset,whence) fseek(stream,offset,whence)
 #define _TIFF_fstat_f(fildes,stat_buff) fstat(fildes,stat_buff)
-/* #define _TIFF_ftell_f(stream) ftell(stream) */
-/* #define _TIFF_stat_f(path,stat_buff) stat(path,stat_buff) */
 #define _TIFF_stat_s struct stat
 #define _TIFF_off_t off_t
 #endif
@@ -321,7 +283,6 @@ typedef size_t TIFFIOSize_t;
 #else
 #define TIFF_NOSANITIZE_UNSIGNED_INT_OVERFLOW
 #endif
-
 
 #if defined(__cplusplus)
 extern "C" {
@@ -439,12 +400,3 @@ extern TIFFCodec _TIFFBuiltinCODECS[];
 }
 #endif
 #endif /* _TIFFIOP_ */
-
-/* vim: set ts=8 sts=8 sw=8 noet: */
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 8
- * fill-column: 78
- * End:
- */

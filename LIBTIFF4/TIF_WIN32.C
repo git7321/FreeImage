@@ -22,35 +22,6 @@
  * OF THIS SOFTWARE.
  */
 
-/*
- * TIFF Library Win32-specific Routines.  Adapted from tif_unix.c 4/5/95 by
- * Scott Wagner (wagner@itek.com), Itek Graphix, Rochester, NY USA
- */
-
-/*
-  CreateFileA/CreateFileW return type 'HANDLE'.
-
-  thandle_t is declared like
-
-    DECLARE_HANDLE(thandle_t);
-
-  in tiffio.h.
-
-  Windows (from winnt.h) DECLARE_HANDLE logic looks like
-
-  #ifdef STRICT
-    typedef void *HANDLE;
-  #define DECLARE_HANDLE(name) struct name##__ { int unused; }; typedef struct name##__ *name
-  #else
-    typedef PVOID HANDLE;
-  #define DECLARE_HANDLE(name) typedef HANDLE name
-  #endif
-
-  See http://bugzilla.maptools.org/show_bug.cgi?id=1941 for problems in WIN64
-  builds resulting from this.  Unfortunately, the proposed patch was lost.
-
-*/
-  
 #include "tiffiop.h"
 #include <malloc.h>
 #include <windows.h>
@@ -58,9 +29,6 @@
 static tmsize_t
 _tiffReadProc(thandle_t fd, void* buf, tmsize_t size)
 {
-	/* tmsize_t is 64bit on 64bit systems, but the WinAPI ReadFile takes
-	 * 32bit sizes, so we loop through the data in suitable 32bit sized
-	 * chunks */
 	uint8* ma;
 	uint64 mb;
 	DWORD n;
@@ -88,9 +56,6 @@ _tiffReadProc(thandle_t fd, void* buf, tmsize_t size)
 static tmsize_t
 _tiffWriteProc(thandle_t fd, void* buf, tmsize_t size)
 {
-	/* tmsize_t is 64bit on 64bit systems, but the WinAPI WriteFile takes
-	 * 32bit sizes, so we loop through the data in suitable 32bit sized
-	 * chunks */
 	uint8* ma;
 	uint64 mb;
 	DWORD n;
@@ -165,17 +130,6 @@ _tiffDummyMapProc(thandle_t fd, void** pbase, toff_t* psize)
 	return (0);
 }
 
-/*
- * From "Hermann Josef Hill" <lhill@rhein-zeitung.de>:
- *
- * Windows uses both a handle and a pointer for file mapping,
- * but according to the SDK documentation and Richter's book
- * "Advanced Windows Programming" it is safe to free the handle
- * after obtaining the file mapping pointer
- *
- * This removes a nasty OS dependency and cures a problem
- * with Visual C++ 5.0
- */
 static int
 _tiffMapProc(thandle_t fd, void** pbase, toff_t* psize)
 {
@@ -188,8 +142,6 @@ _tiffMapProc(thandle_t fd, void** pbase, toff_t* psize)
 	if ((uint64)sizem!=size)
 		return (0);
 
-	/* By passing in 0 for the maximum file size, it specifies that we
-	   create a file mapping object for the full file size. */
 	hMapFile = CreateFileMapping(fd, NULL, PAGE_READONLY, 0, 0, NULL);
 	if (hMapFile == NULL)
 		return (0);
@@ -237,7 +189,7 @@ TIFFFdOpen(int ifd, const char* name, const char* mode)
 			break;
 		}
 	}
-	tif = TIFFClientOpen(name, mode, (thandle_t)ifd, /* FIXME: WIN64 cast to pointer warning */
+	tif = TIFFClientOpen(name, mode, (thandle_t)ifd,
 			_tiffReadProc, _tiffWriteProc,
 			_tiffSeekProc, _tiffCloseProc, _tiffSizeProc,
 			fSuppressMap ? _tiffDummyMapProc : _tiffMapProc,
@@ -281,7 +233,7 @@ TIFFOpen(const char* name, const char* mode)
 		return ((TIFF *)0);
 	}
 
-	tif = TIFFFdOpen((int)fd, name, mode);   /* FIXME: WIN64 cast from pointer to int warning */
+	tif = TIFFFdOpen((int)fd, name, mode);
 	if(!tif)
 		CloseHandle(fd);
 	return tif;
@@ -391,72 +343,15 @@ _TIFFmemcmp(const void* p1, const void* p2, tmsize_t c)
 {
 	return (memcmp(p1, p2, (size_t) c));
 }
-/* 
-#ifndef _WIN32_WCE
-
-#if (_MSC_VER < 1500)
-#  define vsnprintf _vsnprintf
-#endif
 
 static void
 Win32WarningHandler(const char* module, const char* fmt, va_list ap)
 {
-#ifndef TIF_PLATFORM_CONSOLE
-	LPTSTR szTitle;
-	LPTSTR szTmp;
-	LPCTSTR szTitleText = "%s Warning";
-	LPCTSTR szDefaultModule = "LIBTIFF";
-	LPCTSTR szTmpModule = (module == NULL) ? szDefaultModule : module;
-        SIZE_T nBufSize = (strlen(szTmpModule) +
-                        strlen(szTitleText) + strlen(fmt) + 256)*sizeof(char);
-
-	if ((szTitle = (LPTSTR)LocalAlloc(LMEM_FIXED, nBufSize)) == NULL)
-		return;
-	sprintf(szTitle, szTitleText, szTmpModule);
-	szTmp = szTitle + (strlen(szTitle)+2)*sizeof(char);
-	vsnprintf(szTmp, nBufSize-(strlen(szTitle)+2)*sizeof(char), fmt, ap);
-	MessageBoxA(GetFocus(), szTmp, szTitle, MB_OK | MB_ICONINFORMATION);
-	LocalFree(szTitle);
-
-	return;
-#else
-	if (module != NULL)
-		fprintf(stderr, "%s: ", module);
-	fprintf(stderr, "Warning, ");
-	vfprintf(stderr, fmt, ap);
-	fprintf(stderr, ".\n");
-#endif        
 }
 TIFFErrorHandler _TIFFwarningHandler = Win32WarningHandler;
 
 static void
 Win32ErrorHandler(const char* module, const char* fmt, va_list ap)
 {
-#ifndef TIF_PLATFORM_CONSOLE
-	LPTSTR szTitle;
-	LPTSTR szTmp;
-	LPCTSTR szTitleText = "%s Error";
-	LPCTSTR szDefaultModule = "LIBTIFF";
-	LPCTSTR szTmpModule = (module == NULL) ? szDefaultModule : module;
-        SIZE_T nBufSize = (strlen(szTmpModule) +
-                        strlen(szTitleText) + strlen(fmt) + 256)*sizeof(char);
-
-	if ((szTitle = (LPTSTR)LocalAlloc(LMEM_FIXED, nBufSize)) == NULL)
-		return;
-	sprintf(szTitle, szTitleText, szTmpModule);
-	szTmp = szTitle + (strlen(szTitle)+2)*sizeof(char);
-	vsnprintf(szTmp, nBufSize-(strlen(szTitle)+2)*sizeof(char), fmt, ap);
-	MessageBoxA(GetFocus(), szTmp, szTitle, MB_OK | MB_ICONEXCLAMATION);
-	LocalFree(szTitle);
-	return;
-#else
-	if (module != NULL)
-		fprintf(stderr, "%s: ", module);
-	vfprintf(stderr, fmt, ap);
-	fprintf(stderr, ".\n");
-#endif        
 }
 TIFFErrorHandler _TIFFerrorHandler = Win32ErrorHandler;
-
-#endif
-*/
