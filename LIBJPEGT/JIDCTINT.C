@@ -70,18 +70,18 @@
 #endif
 
 #if CONST_BITS == 13
-#define FIX_0_298631336  ((JLONG)2446)          /* FIX(0.298631336) */
-#define FIX_0_390180644  ((JLONG)3196)          /* FIX(0.390180644) */
-#define FIX_0_541196100  ((JLONG)4433)          /* FIX(0.541196100) */
-#define FIX_0_765366865  ((JLONG)6270)          /* FIX(0.765366865) */
-#define FIX_0_899976223  ((JLONG)7373)          /* FIX(0.899976223) */
-#define FIX_1_175875602  ((JLONG)9633)          /* FIX(1.175875602) */
-#define FIX_1_501321110  ((JLONG)12299)         /* FIX(1.501321110) */
-#define FIX_1_847759065  ((JLONG)15137)         /* FIX(1.847759065) */
-#define FIX_1_961570560  ((JLONG)16069)         /* FIX(1.961570560) */
-#define FIX_2_053119869  ((JLONG)16819)         /* FIX(2.053119869) */
-#define FIX_2_562915447  ((JLONG)20995)         /* FIX(2.562915447) */
-#define FIX_3_072711026  ((JLONG)25172)         /* FIX(3.072711026) */
+#define FIX_0_298631336  ((JLONG)2446)
+#define FIX_0_390180644  ((JLONG)3196)
+#define FIX_0_541196100  ((JLONG)4433)
+#define FIX_0_765366865  ((JLONG)6270)
+#define FIX_0_899976223  ((JLONG)7373)
+#define FIX_1_175875602  ((JLONG)9633)
+#define FIX_1_501321110  ((JLONG)12299)
+#define FIX_1_847759065  ((JLONG)15137)
+#define FIX_1_961570560  ((JLONG)16069)
+#define FIX_2_053119869  ((JLONG)16819)
+#define FIX_2_562915447  ((JLONG)20995)
+#define FIX_3_072711026  ((JLONG)25172)
 #else
 #define FIX_0_298631336  FIX(0.298631336)
 #define FIX_0_390180644  FIX(0.390180644)
@@ -1689,7 +1689,6 @@ _jpeg_idct_14x14(j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     z1 = (JLONG)wsptr[2];
     z2 = (JLONG)wsptr[6];
-
     z3 = MULTIPLY(z1 + z2, FIX(1.105676686));
 
     tmp13 = z3 + MULTIPLY(z1, FIX(0.273079590));

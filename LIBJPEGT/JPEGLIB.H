@@ -18,16 +18,6 @@
  * and perhaps jerror.h if they want to know the exact error codes.
  */
 
-/* NOTE: This header file does not include stdio.h, despite the fact that it
- * uses FILE and size_t.  That is by design, since the libjpeg API predates the
- * widespread adoption of ANSI/ISO C.  Referring to libjpeg.txt, it is a
- * documented requirement that calling programs "include system headers that
- * define at least the typedefs FILE and size_t" before including jpeglib.h.
- * Technically speaking, changing that requirement by including stdio.h here
- * would break backward API compatibility.  Please do not file bug reports,
- * feature requests, or pull requests regarding this.
- */
-
 #ifndef JPEGLIB_H
 #define JPEGLIB_H
 
@@ -41,13 +31,6 @@
 extern "C" {
 #endif
 #endif
-
-/* NOTE: In lossless mode, an MCU contains one or more samples rather than one
- * or more 8x8 DCT blocks, so the term "data unit" is used to generically
- * describe a sample in lossless mode or an 8x8 DCT block in lossy mode.  To
- * preserve backward API/ABI compatibility, the field and macro names retain
- * the "block" terminology.
- */
 
 #define DCTSIZE             8   /* The basic DCT block is 8x8 samples */
 #define DCTSIZE2            64  /* DCTSIZE squared; # of elements in a block */

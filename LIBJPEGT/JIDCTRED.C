@@ -43,20 +43,20 @@
 #endif
 
 #if CONST_BITS == 13
-#define FIX_0_211164243  ((JLONG)1730)          /* FIX(0.211164243) */
-#define FIX_0_509795579  ((JLONG)4176)          /* FIX(0.509795579) */
-#define FIX_0_601344887  ((JLONG)4926)          /* FIX(0.601344887) */
-#define FIX_0_720959822  ((JLONG)5906)          /* FIX(0.720959822) */
-#define FIX_0_765366865  ((JLONG)6270)          /* FIX(0.765366865) */
-#define FIX_0_850430095  ((JLONG)6967)          /* FIX(0.850430095) */
-#define FIX_0_899976223  ((JLONG)7373)          /* FIX(0.899976223) */
-#define FIX_1_061594337  ((JLONG)8697)          /* FIX(1.061594337) */
-#define FIX_1_272758580  ((JLONG)10426)         /* FIX(1.272758580) */
-#define FIX_1_451774981  ((JLONG)11893)         /* FIX(1.451774981) */
-#define FIX_1_847759065  ((JLONG)15137)         /* FIX(1.847759065) */
-#define FIX_2_172734803  ((JLONG)17799)         /* FIX(2.172734803) */
-#define FIX_2_562915447  ((JLONG)20995)         /* FIX(2.562915447) */
-#define FIX_3_624509785  ((JLONG)29692)         /* FIX(3.624509785) */
+#define FIX_0_211164243  ((JLONG)1730)
+#define FIX_0_509795579  ((JLONG)4176)
+#define FIX_0_601344887  ((JLONG)4926)
+#define FIX_0_720959822  ((JLONG)5906)
+#define FIX_0_765366865  ((JLONG)6270)
+#define FIX_0_850430095  ((JLONG)6967)
+#define FIX_0_899976223  ((JLONG)7373)
+#define FIX_1_061594337  ((JLONG)8697)
+#define FIX_1_272758580  ((JLONG)10426)
+#define FIX_1_451774981  ((JLONG)11893)
+#define FIX_1_847759065  ((JLONG)15137)
+#define FIX_2_172734803  ((JLONG)17799)
+#define FIX_2_562915447  ((JLONG)20995)
+#define FIX_3_624509785  ((JLONG)29692)
 #else
 #define FIX_0_211164243  FIX(0.211164243)
 #define FIX_0_509795579  FIX(0.509795579)
@@ -132,8 +132,6 @@ _jpeg_idct_4x4(j_decompress_ptr cinfo, jpeg_component_info *compptr,
       continue;
     }
 
-    /* Even part */
-
     tmp0 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0]);
     tmp0 = LEFT_SHIFT(tmp0, CONST_BITS + 1);
 
@@ -145,24 +143,20 @@ _jpeg_idct_4x4(j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp10 = tmp0 + tmp2;
     tmp12 = tmp0 - tmp2;
 
-    /* Odd part */
-
     z1 = DEQUANTIZE(inptr[DCTSIZE * 7], quantptr[DCTSIZE * 7]);
     z2 = DEQUANTIZE(inptr[DCTSIZE * 5], quantptr[DCTSIZE * 5]);
     z3 = DEQUANTIZE(inptr[DCTSIZE * 3], quantptr[DCTSIZE * 3]);
     z4 = DEQUANTIZE(inptr[DCTSIZE * 1], quantptr[DCTSIZE * 1]);
 
-    tmp0 = MULTIPLY(z1, -FIX_0_211164243) + /* sqrt(2) * ( c3-c1) */
-           MULTIPLY(z2,  FIX_1_451774981) + /* sqrt(2) * ( c3+c7) */
-           MULTIPLY(z3, -FIX_2_172734803) + /* sqrt(2) * (-c1-c5) */
-           MULTIPLY(z4,  FIX_1_061594337);  /* sqrt(2) * ( c5+c7) */
+    tmp0 = MULTIPLY(z1, -FIX_0_211164243) +
+           MULTIPLY(z2,  FIX_1_451774981) +
+           MULTIPLY(z3, -FIX_2_172734803) +
+           MULTIPLY(z4,  FIX_1_061594337);
 
-    tmp2 = MULTIPLY(z1, -FIX_0_509795579) + /* sqrt(2) * (c7-c5) */
-           MULTIPLY(z2, -FIX_0_601344887) + /* sqrt(2) * (c5-c1) */
-           MULTIPLY(z3,  FIX_0_899976223) + /* sqrt(2) * (c3-c7) */
-           MULTIPLY(z4,  FIX_2_562915447);  /* sqrt(2) * (c1+c3) */
-
-    /* Final output stage */
+    tmp2 = MULTIPLY(z1, -FIX_0_509795579) +
+           MULTIPLY(z2, -FIX_0_601344887) +
+           MULTIPLY(z3,  FIX_0_899976223) +
+           MULTIPLY(z4,  FIX_2_562915447);
 
     wsptr[DCTSIZE * 0] =
       (int)DESCALE(tmp10 + tmp2, CONST_BITS - PASS1_BITS + 1);
@@ -194,8 +188,6 @@ _jpeg_idct_4x4(j_decompress_ptr cinfo, jpeg_component_info *compptr,
     }
 #endif
 
-    /* Even part */
-
     tmp0 = LEFT_SHIFT((JLONG)wsptr[0], CONST_BITS + 1);
 
     tmp2 = MULTIPLY((JLONG)wsptr[2],  FIX_1_847759065) +
@@ -204,24 +196,20 @@ _jpeg_idct_4x4(j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp10 = tmp0 + tmp2;
     tmp12 = tmp0 - tmp2;
 
-    /* Odd part */
-
     z1 = (JLONG)wsptr[7];
     z2 = (JLONG)wsptr[5];
     z3 = (JLONG)wsptr[3];
     z4 = (JLONG)wsptr[1];
 
-    tmp0 = MULTIPLY(z1, -FIX_0_211164243) + /* sqrt(2) * ( c3-c1) */
-           MULTIPLY(z2,  FIX_1_451774981) + /* sqrt(2) * ( c3+c7) */
-           MULTIPLY(z3, -FIX_2_172734803) + /* sqrt(2) * (-c1-c5) */
-           MULTIPLY(z4,  FIX_1_061594337);  /* sqrt(2) * ( c5+c7) */
+    tmp0 = MULTIPLY(z1, -FIX_0_211164243) +
+           MULTIPLY(z2,  FIX_1_451774981) +
+           MULTIPLY(z3, -FIX_2_172734803) +
+           MULTIPLY(z4,  FIX_1_061594337);
 
-    tmp2 = MULTIPLY(z1, -FIX_0_509795579) + /* sqrt(2) * (c7-c5) */
-           MULTIPLY(z2, -FIX_0_601344887) + /* sqrt(2) * (c5-c1) */
-           MULTIPLY(z3, FIX_0_899976223) +  /* sqrt(2) * (c3-c7) */
-           MULTIPLY(z4, FIX_2_562915447);   /* sqrt(2) * (c1+c3) */
-
-    /* Final output stage */
+    tmp2 = MULTIPLY(z1, -FIX_0_509795579) +
+           MULTIPLY(z2, -FIX_0_601344887) +
+           MULTIPLY(z3, FIX_0_899976223) +
+           MULTIPLY(z4, FIX_2_562915447);
 
     outptr[0] = range_limit[(int)DESCALE(tmp10 + tmp2,
                                          CONST_BITS + PASS1_BITS + 3 + 1) &
@@ -273,12 +261,8 @@ _jpeg_idct_2x2(j_decompress_ptr cinfo, jpeg_component_info *compptr,
       continue;
     }
 
-    /* Even part */
-
     z1 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0]);
     tmp10 = LEFT_SHIFT(z1, CONST_BITS + 2);
-
-    /* Odd part */
 
     z1 = DEQUANTIZE(inptr[DCTSIZE * 7], quantptr[DCTSIZE * 7]);
     tmp0 = MULTIPLY(z1, -FIX_0_720959822);
@@ -289,15 +273,11 @@ _jpeg_idct_2x2(j_decompress_ptr cinfo, jpeg_component_info *compptr,
     z1 = DEQUANTIZE(inptr[DCTSIZE * 1], quantptr[DCTSIZE * 1]);
     tmp0 += MULTIPLY(z1, FIX_3_624509785);
 
-    /* Final output stage */
-
     wsptr[DCTSIZE * 0] =
       (int)DESCALE(tmp10 + tmp0, CONST_BITS - PASS1_BITS + 2);
     wsptr[DCTSIZE * 1] =
       (int)DESCALE(tmp10 - tmp0, CONST_BITS - PASS1_BITS + 2);
   }
-
-  /* Pass 2: process 2 rows from work array, store into output array. */
 
   wsptr = workspace;
   for (ctr = 0; ctr < 2; ctr++) {
@@ -316,18 +296,12 @@ _jpeg_idct_2x2(j_decompress_ptr cinfo, jpeg_component_info *compptr,
     }
 #endif
 
-    /* Even part */
-
     tmp10 = LEFT_SHIFT((JLONG)wsptr[0], CONST_BITS + 2);
 
-    /* Odd part */
-
-    tmp0 = MULTIPLY((JLONG)wsptr[7], -FIX_0_720959822) + /* sqrt(2) * ( c7-c5+c3-c1) */
-           MULTIPLY((JLONG)wsptr[5],  FIX_0_850430095) + /* sqrt(2) * (-c1+c3+c5+c7) */
-           MULTIPLY((JLONG)wsptr[3], -FIX_1_272758580) + /* sqrt(2) * (-c1+c3-c5-c7) */
-           MULTIPLY((JLONG)wsptr[1],  FIX_3_624509785);  /* sqrt(2) * ( c1+c3+c5+c7) */
-
-    /* Final output stage */
+    tmp0 = MULTIPLY((JLONG)wsptr[7], -FIX_0_720959822) +
+           MULTIPLY((JLONG)wsptr[5],  FIX_0_850430095) +
+           MULTIPLY((JLONG)wsptr[3], -FIX_1_272758580) +
+           MULTIPLY((JLONG)wsptr[1],  FIX_3_624509785);
 
     outptr[0] = range_limit[(int)DESCALE(tmp10 + tmp0,
                                          CONST_BITS + PASS1_BITS + 3 + 2) &

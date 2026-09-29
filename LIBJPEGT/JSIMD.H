@@ -21,7 +21,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "../src/jchuff.h"
+#include "jchuff.h"
 #include "jsimdconst.h"
 
 EXTERN(unsigned int) jsimd_set_rgb_ycc(j_compress_ptr cinfo);

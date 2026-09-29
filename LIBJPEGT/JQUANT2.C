@@ -27,67 +27,60 @@
 
 #if defined(QUANT_2PASS_SUPPORTED) && BITS_IN_JSAMPLE != 16
 
-#define R_SCALE  2              /* scale R distances by this much */
-#define G_SCALE  3              /* scale G distances by this much */
-#define B_SCALE  1              /* and B by this much */
+#define R_SCALE  2
+#define G_SCALE  3
+#define B_SCALE  1
 
 static const int c_scales[3] = { R_SCALE, G_SCALE, B_SCALE };
 #define C0_SCALE  c_scales[rgb_red[cinfo->out_color_space]]
 #define C1_SCALE  c_scales[rgb_green[cinfo->out_color_space]]
 #define C2_SCALE  c_scales[rgb_blue[cinfo->out_color_space]]
 
-#define MAXNUMCOLORS  (_MAXJSAMPLE + 1) /* maximum size of colormap */
+#define MAXNUMCOLORS  (_MAXJSAMPLE + 1)
 
-#define HIST_C0_BITS  5         /* bits of precision in R/B histogram */
-#define HIST_C1_BITS  6         /* bits of precision in G histogram */
-#define HIST_C2_BITS  5         /* bits of precision in B/R histogram */
+#define HIST_C0_BITS  5
+#define HIST_C1_BITS  6
+#define HIST_C2_BITS  5
 
-/* Number of elements along histogram axes. */
 #define HIST_C0_ELEMS  (1 << HIST_C0_BITS)
 #define HIST_C1_ELEMS  (1 << HIST_C1_BITS)
 #define HIST_C2_ELEMS  (1 << HIST_C2_BITS)
 
-/* These are the amounts to shift an input value to get a histogram index. */
 #define C0_SHIFT  (BITS_IN_JSAMPLE - HIST_C0_BITS)
 #define C1_SHIFT  (BITS_IN_JSAMPLE - HIST_C1_BITS)
 #define C2_SHIFT  (BITS_IN_JSAMPLE - HIST_C2_BITS)
 
-typedef UINT16 histcell;        /* histogram cell; prefer an unsigned type */
+typedef UINT16 histcell;
 
-typedef histcell *histptr;      /* for pointers to histogram cells */
+typedef histcell *histptr;
 
-typedef histcell hist1d[HIST_C2_ELEMS]; /* typedefs for the array */
-typedef hist1d *hist2d;         /* type for the 2nd-level pointers */
-typedef hist2d *hist3d;         /* type for top-level pointer */
+typedef histcell hist1d[HIST_C2_ELEMS];
+typedef hist1d *hist2d;
+typedef hist2d *hist3d;
 
 #if BITS_IN_JSAMPLE == 8
-typedef INT16 FSERROR;          /* 16 bits should be enough */
-typedef int LOCFSERROR;         /* use 'int' for calculation temps */
+typedef INT16 FSERROR;
+typedef int LOCFSERROR;
 #else
-typedef JLONG FSERROR;          /* may need more than 16 bits */
-typedef JLONG LOCFSERROR;       /* be sure calculation temps are big enough */
+typedef JLONG FSERROR;
+typedef JLONG LOCFSERROR;
 #endif
 
-typedef FSERROR *FSERRPTR;      /* pointer to error array */
-
-/* Private subobject */
+typedef FSERROR *FSERRPTR;
 
 typedef struct {
   struct jpeg_color_quantizer pub;
 
-  /* Space for the eventually created colormap is stashed here */
-  _JSAMPARRAY sv_colormap;      /* colormap allocated at init time */
-  int desired;                  /* desired # of colors = size of colormap */
+  _JSAMPARRAY sv_colormap;
+  int desired;
 
-  /* Variables for accumulating image statistics */
-  hist3d histogram;             /* pointer to the histogram */
+  hist3d histogram;
 
-  boolean needs_zeroed;         /* TRUE if next pass must zero histogram */
+  boolean needs_zeroed;
 
-  /* Variables for Floyd-Steinberg dithering */
-  FSERRPTR fserrors;            /* accumulated errors */
-  boolean on_odd_row;           /* flag to remember which row we are on */
-  int *error_limiter;           /* table for clamping the applied error */
+  FSERRPTR fserrors;
+  boolean on_odd_row;
+  int *error_limiter;
 } my_cquantizer;
 
 typedef my_cquantizer *my_cquantize_ptr;
@@ -494,13 +487,13 @@ find_best_colors(j_decompress_ptr cinfo, int minc0, int minc1, int minc2,
 {
   int ic0, ic1, ic2;
   int i, icolor;
-  register JLONG *bptr;         /* pointer into bestdist[] array */
-  _JSAMPLE *cptr;               /* pointer into bestcolor[] array */
-  JLONG dist0, dist1;           /* initial distance values */
-  register JLONG dist2;         /* current distance in inner loop */
-  JLONG xx0, xx1;               /* distance increments */
+  register JLONG *bptr;
+  _JSAMPLE *cptr;
+  JLONG dist0, dist1;
+  register JLONG dist2;
+  JLONG xx0, xx1;
   register JLONG xx2;
-  JLONG inc0, inc1, inc2;       /* initial values for increments */
+  JLONG inc0, inc1, inc2;
   JLONG bestdist[BOX_C0_ELEMS * BOX_C1_ELEMS * BOX_C2_ELEMS];
 
   bptr = bestdist;
@@ -555,12 +548,12 @@ fill_inverse_cmap(j_decompress_ptr cinfo, int c0, int c1, int c2)
 {
   my_cquantize_ptr cquantize = (my_cquantize_ptr)cinfo->cquantize;
   hist3d histogram = cquantize->histogram;
-  int minc0, minc1, minc2;      /* lower left corner of update box */
+  int minc0, minc1, minc2;
   int ic0, ic1, ic2;
-  register _JSAMPLE *cptr;      /* pointer into bestcolor[] array */
-  register histptr cachep;      /* pointer into main cache array */
+  register _JSAMPLE *cptr;
+  register histptr cachep;
   _JSAMPLE colorlist[MAXNUMCOLORS];
-  int numcolors;                /* number of candidate colors */
+  int numcolors;
   _JSAMPLE bestcolor[BOX_C0_ELEMS * BOX_C1_ELEMS * BOX_C2_ELEMS];
 
   c0 >>= BOX_C0_LOG;
@@ -624,15 +617,15 @@ pass2_fs_dither(j_decompress_ptr cinfo, _JSAMPARRAY input_buf,
 {
   my_cquantize_ptr cquantize = (my_cquantize_ptr)cinfo->cquantize;
   hist3d histogram = cquantize->histogram;
-  register LOCFSERROR cur0, cur1, cur2; /* current error or pixel value */
-  LOCFSERROR belowerr0, belowerr1, belowerr2; /* error for pixel below cur */
-  LOCFSERROR bpreverr0, bpreverr1, bpreverr2; /* error for below/prev col */
-  register FSERRPTR errorptr;   /* => fserrors[] at column before current */
-  _JSAMPROW inptr;              /* => current input pixel */
-  _JSAMPROW outptr;             /* => current output pixel */
+  register LOCFSERROR cur0, cur1, cur2;
+  LOCFSERROR belowerr0, belowerr1, belowerr2;
+  LOCFSERROR bpreverr0, bpreverr1, bpreverr2;
+  register FSERRPTR errorptr;
+  _JSAMPROW inptr;
+  _JSAMPROW outptr;
   histptr cachep;
-  int dir;                      /* +1 or -1 depending on direction */
-  int dir3;                     /* 3*dir, for advancing inptr & errorptr */
+  int dir;
+  int dir3;
   int row;
   JDIMENSION col;
   JDIMENSION width = cinfo->output_width;
@@ -691,27 +684,27 @@ pass2_fs_dither(j_decompress_ptr cinfo, _JSAMPARRAY input_buf,
       {
         register LOCFSERROR bnexterr;
 
-        bnexterr = cur0;        /* Process component 0 */
+        bnexterr = cur0;
         errorptr[0] = (FSERROR)(bpreverr0 + cur0 * 3);
         bpreverr0 = belowerr0 + cur0 * 5;
         belowerr0 = bnexterr;
         cur0 *= 7;
-        bnexterr = cur1;        /* Process component 1 */
+        bnexterr = cur1;
         errorptr[1] = (FSERROR)(bpreverr1 + cur1 * 3);
         bpreverr1 = belowerr1 + cur1 * 5;
         belowerr1 = bnexterr;
         cur1 *= 7;
-        bnexterr = cur2;        /* Process component 2 */
+        bnexterr = cur2;
         errorptr[2] = (FSERROR)(bpreverr2 + cur2 * 3);
         bpreverr2 = belowerr2 + cur2 * 5;
         belowerr2 = bnexterr;
         cur2 *= 7;
       }
-      inptr += dir3;            /* Advance pixel pointers to next column */
+      inptr += dir3;
       outptr += dir;
-      errorptr += dir3;         /* advance errorptr to current column */
+      errorptr += dir3;
     }
-    errorptr[0] = (FSERROR)bpreverr0; /* unload prev errs into array */
+    errorptr[0] = (FSERROR)bpreverr0;
     errorptr[1] = (FSERROR)bpreverr1;
     errorptr[2] = (FSERROR)bpreverr2;
   }

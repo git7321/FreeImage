@@ -22,8 +22,6 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-/* Supported CPU architectures */
-
 #define NONE     -1
 #define X86_64   0
 #define I386     1

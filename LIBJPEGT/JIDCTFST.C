@@ -154,44 +154,40 @@ _jpeg_idct_ifast(j_decompress_ptr cinfo, jpeg_component_info *compptr,
       continue;
     }
 
-    /* Even part */
-
     tmp0 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0]);
     tmp1 = DEQUANTIZE(inptr[DCTSIZE * 2], quantptr[DCTSIZE * 2]);
     tmp2 = DEQUANTIZE(inptr[DCTSIZE * 4], quantptr[DCTSIZE * 4]);
     tmp3 = DEQUANTIZE(inptr[DCTSIZE * 6], quantptr[DCTSIZE * 6]);
 
-    tmp10 = tmp0 + tmp2;        /* phase 3 */
+    tmp10 = tmp0 + tmp2;
     tmp11 = tmp0 - tmp2;
 
-    tmp13 = tmp1 + tmp3;        /* phases 5-3 */
+    tmp13 = tmp1 + tmp3;
     tmp12 = MULTIPLY(tmp1 - tmp3, FIX_1_414213562) - tmp13;
 
-    tmp0 = tmp10 + tmp13;       /* phase 2 */
+    tmp0 = tmp10 + tmp13;
     tmp3 = tmp10 - tmp13;
     tmp1 = tmp11 + tmp12;
     tmp2 = tmp11 - tmp12;
-
-    /* Odd part */
 
     tmp4 = DEQUANTIZE(inptr[DCTSIZE * 1], quantptr[DCTSIZE * 1]);
     tmp5 = DEQUANTIZE(inptr[DCTSIZE * 3], quantptr[DCTSIZE * 3]);
     tmp6 = DEQUANTIZE(inptr[DCTSIZE * 5], quantptr[DCTSIZE * 5]);
     tmp7 = DEQUANTIZE(inptr[DCTSIZE * 7], quantptr[DCTSIZE * 7]);
 
-    z13 = tmp6 + tmp5;          /* phase 6 */
+    z13 = tmp6 + tmp5;
     z10 = tmp6 - tmp5;
     z11 = tmp4 + tmp7;
     z12 = tmp4 - tmp7;
 
-    tmp7 = z11 + z13;           /* phase 5 */
+    tmp7 = z11 + z13;
     tmp11 = MULTIPLY(z11 - z13, FIX_1_414213562);
 
     z5 = MULTIPLY(z10 + z12, FIX_1_847759065);
     tmp10 = MULTIPLY(z12, FIX_1_082392200) - z5;
     tmp12 = MULTIPLY(z10, -FIX_2_613125930) + z5;
 
-    tmp6 = tmp12 - tmp7;        /* phase 2 */
+    tmp6 = tmp12 - tmp7;
     tmp5 = tmp11 - tmp6;
     tmp4 = tmp10 + tmp5;
 
@@ -232,8 +228,6 @@ _jpeg_idct_ifast(j_decompress_ptr cinfo, jpeg_component_info *compptr,
     }
 #endif
 
-    /* Even part */
-
     tmp10 = ((DCTELEM)wsptr[0] + (DCTELEM)wsptr[4]);
     tmp11 = ((DCTELEM)wsptr[0] - (DCTELEM)wsptr[4]);
 
@@ -246,25 +240,21 @@ _jpeg_idct_ifast(j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp1 = tmp11 + tmp12;
     tmp2 = tmp11 - tmp12;
 
-    /* Odd part */
-
     z13 = (DCTELEM)wsptr[5] + (DCTELEM)wsptr[3];
     z10 = (DCTELEM)wsptr[5] - (DCTELEM)wsptr[3];
     z11 = (DCTELEM)wsptr[1] + (DCTELEM)wsptr[7];
     z12 = (DCTELEM)wsptr[1] - (DCTELEM)wsptr[7];
 
-    tmp7 = z11 + z13;           /* phase 5 */
+    tmp7 = z11 + z13;
     tmp11 = MULTIPLY(z11 - z13, FIX_1_414213562);
 
     z5 = MULTIPLY(z10 + z12, FIX_1_847759065);
     tmp10 = MULTIPLY(z12, FIX_1_082392200) - z5;
     tmp12 = MULTIPLY(z10, -FIX_2_613125930) + z5;
 
-    tmp6 = tmp12 - tmp7;        /* phase 2 */
+    tmp6 = tmp12 - tmp7;
     tmp5 = tmp11 - tmp6;
     tmp4 = tmp10 + tmp5;
-
-    /* Final output stage: scale down by a factor of 8 and range-limit */
 
     outptr[0] =
       range_limit[IDESCALE(tmp0 + tmp7, PASS1_BITS + 3) & RANGE_MASK];

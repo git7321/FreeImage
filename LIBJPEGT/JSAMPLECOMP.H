@@ -6,13 +6,6 @@
  * file.
  */
 
-/* In source files that must be compiled for multiple data precisions, we
- * prefix all precision-dependent data types, macros, methods, fields, and
- * function names with an underscore.  Including this file replaces those
- * precision-independent tokens with their precision-dependent equivalents,
- * based on the value of BITS_IN_JSAMPLE.
- */
-
 #ifndef JSAMPLECOMP_H
 #define JSAMPLECOMP_H
 

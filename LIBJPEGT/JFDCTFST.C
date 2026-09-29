@@ -47,10 +47,10 @@
 #define CONST_BITS  8
 
 #if CONST_BITS == 8
-#define FIX_0_382683433  ((JLONG)98)            /* FIX(0.382683433) */
-#define FIX_0_541196100  ((JLONG)139)           /* FIX(0.541196100) */
-#define FIX_0_707106781  ((JLONG)181)           /* FIX(0.707106781) */
-#define FIX_1_306562965  ((JLONG)334)           /* FIX(1.306562965) */
+#define FIX_0_382683433  ((JLONG)98)
+#define FIX_0_541196100  ((JLONG)139)
+#define FIX_0_707106781  ((JLONG)181)
+#define FIX_1_306562965  ((JLONG)334)
 #else
 #define FIX_0_382683433  FIX(0.382683433)
 #define FIX_0_541196100  FIX(0.541196100)
@@ -75,8 +75,6 @@ _jpeg_fdct_ifast(DCTELEM *data)
   int ctr;
   SHIFT_TEMPS
 
-  /* Pass 1: process rows. */
-
   dataptr = data;
   for (ctr = DCTSIZE - 1; ctr >= 0; ctr--) {
     tmp0 = dataptr[0] + dataptr[7];
@@ -88,23 +86,19 @@ _jpeg_fdct_ifast(DCTELEM *data)
     tmp3 = dataptr[3] + dataptr[4];
     tmp4 = dataptr[3] - dataptr[4];
 
-    /* Even part */
-
-    tmp10 = tmp0 + tmp3;        /* phase 2 */
+    tmp10 = tmp0 + tmp3;
     tmp13 = tmp0 - tmp3;
     tmp11 = tmp1 + tmp2;
     tmp12 = tmp1 - tmp2;
 
-    dataptr[0] = tmp10 + tmp11; /* phase 3 */
+    dataptr[0] = tmp10 + tmp11;
     dataptr[4] = tmp10 - tmp11;
 
-    z1 = MULTIPLY(tmp12 + tmp13, FIX_0_707106781); /* c4 */
-    dataptr[2] = tmp13 + z1;    /* phase 5 */
+    z1 = MULTIPLY(tmp12 + tmp13, FIX_0_707106781);
+    dataptr[2] = tmp13 + z1;
     dataptr[6] = tmp13 - z1;
 
-    /* Odd part */
-
-    tmp10 = tmp4 + tmp5;        /* phase 2 */
+    tmp10 = tmp4 + tmp5;
     tmp11 = tmp5 + tmp6;
     tmp12 = tmp6 + tmp7;
 
@@ -113,18 +107,16 @@ _jpeg_fdct_ifast(DCTELEM *data)
     z4 = MULTIPLY(tmp12, FIX_1_306562965) + z5;
     z3 = MULTIPLY(tmp11, FIX_0_707106781);
 
-    z11 = tmp7 + z3;            /* phase 5 */
+    z11 = tmp7 + z3;
     z13 = tmp7 - z3;
 
-    dataptr[5] = z13 + z2;      /* phase 6 */
+    dataptr[5] = z13 + z2;
     dataptr[3] = z13 - z2;
     dataptr[1] = z11 + z4;
     dataptr[7] = z11 - z4;
 
     dataptr += DCTSIZE;
   }
-
-  /* Pass 2: process columns. */
 
   dataptr = data;
   for (ctr = DCTSIZE - 1; ctr >= 0; ctr--) {
@@ -137,9 +129,7 @@ _jpeg_fdct_ifast(DCTELEM *data)
     tmp3 = dataptr[DCTSIZE * 3] + dataptr[DCTSIZE * 4];
     tmp4 = dataptr[DCTSIZE * 3] - dataptr[DCTSIZE * 4];
 
-    /* Even part */
-
-    tmp10 = tmp0 + tmp3;        /* phase 2 */
+    tmp10 = tmp0 + tmp3;
     tmp13 = tmp0 - tmp3;
     tmp11 = tmp1 + tmp2;
     tmp12 = tmp1 - tmp2;
@@ -151,9 +141,7 @@ _jpeg_fdct_ifast(DCTELEM *data)
     dataptr[DCTSIZE * 2] = tmp13 + z1;
     dataptr[DCTSIZE * 6] = tmp13 - z1;
 
-    /* Odd part */
-
-    tmp10 = tmp4 + tmp5;        /* phase 2 */
+    tmp10 = tmp4 + tmp5;
     tmp11 = tmp5 + tmp6;
     tmp12 = tmp6 + tmp7;
 
@@ -162,7 +150,7 @@ _jpeg_fdct_ifast(DCTELEM *data)
     z4 = MULTIPLY(tmp12, FIX_1_306562965) + z5;
     z3 = MULTIPLY(tmp11, FIX_0_707106781);
 
-    z11 = tmp7 + z3;            /* phase 5 */
+    z11 = tmp7 + z3;
     z13 = tmp7 - z3;
 
     dataptr[DCTSIZE * 5] = z13 + z2;

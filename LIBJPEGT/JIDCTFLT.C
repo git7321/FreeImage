@@ -110,44 +110,40 @@ _jpeg_idct_float(j_decompress_ptr cinfo, jpeg_component_info *compptr,
       continue;
     }
 
-    /* Even part */
-
     tmp0 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0] * _0_125);
     tmp1 = DEQUANTIZE(inptr[DCTSIZE * 2], quantptr[DCTSIZE * 2] * _0_125);
     tmp2 = DEQUANTIZE(inptr[DCTSIZE * 4], quantptr[DCTSIZE * 4] * _0_125);
     tmp3 = DEQUANTIZE(inptr[DCTSIZE * 6], quantptr[DCTSIZE * 6] * _0_125);
 
-    tmp10 = tmp0 + tmp2;        /* phase 3 */
+    tmp10 = tmp0 + tmp2;
     tmp11 = tmp0 - tmp2;
 
-    tmp13 = tmp1 + tmp3;        /* phases 5-3 */
+    tmp13 = tmp1 + tmp3;
     tmp12 = (tmp1 - tmp3) * ((FAST_FLOAT)1.414213562) - tmp13;
 
-    tmp0 = tmp10 + tmp13;       /* phase 2 */
+    tmp0 = tmp10 + tmp13;
     tmp3 = tmp10 - tmp13;
     tmp1 = tmp11 + tmp12;
     tmp2 = tmp11 - tmp12;
-
-    /* Odd part */
 
     tmp4 = DEQUANTIZE(inptr[DCTSIZE * 1], quantptr[DCTSIZE * 1] * _0_125);
     tmp5 = DEQUANTIZE(inptr[DCTSIZE * 3], quantptr[DCTSIZE * 3] * _0_125);
     tmp6 = DEQUANTIZE(inptr[DCTSIZE * 5], quantptr[DCTSIZE * 5] * _0_125);
     tmp7 = DEQUANTIZE(inptr[DCTSIZE * 7], quantptr[DCTSIZE * 7] * _0_125);
 
-    z13 = tmp6 + tmp5;          /* phase 6 */
+    z13 = tmp6 + tmp5;
     z10 = tmp6 - tmp5;
     z11 = tmp4 + tmp7;
     z12 = tmp4 - tmp7;
 
-    tmp7 = z11 + z13;           /* phase 5 */
+    tmp7 = z11 + z13;
     tmp11 = (z11 - z13) * ((FAST_FLOAT)1.414213562);
 
     z5 = (z10 + z12) * ((FAST_FLOAT)1.847759065);
     tmp10 = z5 - z12 * ((FAST_FLOAT)1.082392200);
     tmp12 = z5 - z10 * ((FAST_FLOAT)2.613125930);
 
-    tmp6 = tmp12 - tmp7;        /* phase 2 */
+    tmp6 = tmp12 - tmp7;
     tmp5 = tmp11 - tmp6;
     tmp4 = tmp10 - tmp5;
 
@@ -165,8 +161,6 @@ _jpeg_idct_float(j_decompress_ptr cinfo, jpeg_component_info *compptr,
     wsptr++;
   }
 
-  /* Pass 2: process rows from work array, store into output array. */
-
   wsptr = workspace;
   for (ctr = 0; ctr < DCTSIZE; ctr++) {
     outptr = output_buf[ctr] + output_col;
@@ -183,8 +177,6 @@ _jpeg_idct_float(j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp1 = tmp11 + tmp12;
     tmp2 = tmp11 - tmp12;
 
-    /* Odd part */
-
     z13 = wsptr[5] + wsptr[3];
     z10 = wsptr[5] - wsptr[3];
     z11 = wsptr[1] + wsptr[7];
@@ -200,8 +192,6 @@ _jpeg_idct_float(j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp6 = tmp12 - tmp7;
     tmp5 = tmp11 - tmp6;
     tmp4 = tmp10 - tmp5;
-
-    /* Final output stage: float->int conversion and range-limit */
 
     outptr[0] = range_limit[((int)(tmp0 + tmp7)) & RANGE_MASK];
     outptr[7] = range_limit[((int)(tmp0 - tmp7)) & RANGE_MASK];

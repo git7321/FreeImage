@@ -54,17 +54,17 @@ round_up_pow2(size_t a, size_t b)
 typedef struct small_pool_struct *small_pool_ptr;
 
 typedef struct small_pool_struct {
-  small_pool_ptr next;          /* next in list of pools */
-  size_t bytes_used;            /* how many bytes already used within pool */
-  size_t bytes_left;            /* bytes still available in this pool */
+  small_pool_ptr next;
+  size_t bytes_used;
+  size_t bytes_left;
 } small_pool_hdr;
 
 typedef struct large_pool_struct *large_pool_ptr;
 
 typedef struct large_pool_struct {
-  large_pool_ptr next;          /* next in list of pools */
-  size_t bytes_used;            /* how many bytes already used within pool */
-  size_t bytes_left;            /* bytes still available in this pool */
+  large_pool_ptr next;
+  size_t bytes_used;
+  size_t bytes_left;
 } large_pool_hdr;
 
 typedef struct {
@@ -78,44 +78,41 @@ typedef struct {
 
   size_t total_space_allocated;
 
-  JDIMENSION last_rowsperchunk; /* from most recent alloc_sarray/barray */
+  JDIMENSION last_rowsperchunk;
 } my_memory_mgr;
 
 typedef my_memory_mgr *my_mem_ptr;
 
 struct jvirt_sarray_control {
-  JSAMPARRAY mem_buffer;        /* => the in-memory buffer (if
-                                   cinfo->data_precision > 8, then this is
-                                   actually a J12SAMPARRAY or a
-                                   J16SAMPARRAY) */
-  JDIMENSION rows_in_array;     /* total virtual array height */
-  JDIMENSION samplesperrow;     /* width of array (and of memory buffer) */
-  JDIMENSION maxaccess;         /* max rows accessed by access_virt_sarray */
-  JDIMENSION rows_in_mem;       /* height of memory buffer */
-  JDIMENSION rowsperchunk;      /* allocation chunk size in mem_buffer */
-  JDIMENSION cur_start_row;     /* first logical row # in the buffer */
-  JDIMENSION first_undef_row;   /* row # of first uninitialized row */
-  boolean pre_zero;             /* pre-zero mode requested? */
-  boolean dirty;                /* do current buffer contents need written? */
-  boolean b_s_open;             /* is backing-store data valid? */
-  jvirt_sarray_ptr next;        /* link to next virtual sarray control block */
-  backing_store_info b_s_info;  /* System-dependent control info */
+  JSAMPARRAY mem_buffer;
+  JDIMENSION rows_in_array;
+  JDIMENSION samplesperrow;
+  JDIMENSION maxaccess;
+  JDIMENSION rows_in_mem;
+  JDIMENSION rowsperchunk;
+  JDIMENSION cur_start_row;
+  JDIMENSION first_undef_row;
+  boolean pre_zero;
+  boolean dirty;
+  boolean b_s_open;
+  jvirt_sarray_ptr next;
+  backing_store_info b_s_info;
 };
 
 struct jvirt_barray_control {
-  JBLOCKARRAY mem_buffer;       /* => the in-memory buffer */
-  JDIMENSION rows_in_array;     /* total virtual array height */
-  JDIMENSION blocksperrow;      /* width of array (and of memory buffer) */
-  JDIMENSION maxaccess;         /* max rows accessed by access_virt_barray */
-  JDIMENSION rows_in_mem;       /* height of memory buffer */
-  JDIMENSION rowsperchunk;      /* allocation chunk size in mem_buffer */
-  JDIMENSION cur_start_row;     /* first logical row # in the buffer */
-  JDIMENSION first_undef_row;   /* row # of first uninitialized row */
-  boolean pre_zero;             /* pre-zero mode requested? */
-  boolean dirty;                /* do current buffer contents need written? */
-  boolean b_s_open;             /* is backing-store data valid? */
-  jvirt_barray_ptr next;        /* link to next virtual barray control block */
-  backing_store_info b_s_info;  /* System-dependent control info */
+  JBLOCKARRAY mem_buffer;
+  JDIMENSION rows_in_array;
+  JDIMENSION blocksperrow;
+  JDIMENSION maxaccess;
+  JDIMENSION rows_in_mem;
+  JDIMENSION rowsperchunk;
+  JDIMENSION cur_start_row;
+  JDIMENSION first_undef_row;
+  boolean pre_zero;
+  boolean dirty;
+  boolean b_s_open;
+  jvirt_barray_ptr next;
+  backing_store_info b_s_info;
 };
 
 LOCAL(void)
@@ -123,18 +120,17 @@ out_of_memory(j_common_ptr cinfo, int which)
 {
 }
 
-
 static const size_t first_pool_slop[JPOOL_NUMPOOLS] = {
-  1600,                         /* first PERMANENT pool */
-  16000                         /* first IMAGE pool */
+  1600,
+  16000
 };
 
 static const size_t extra_pool_slop[JPOOL_NUMPOOLS] = {
-  0,                            /* additional PERMANENT pools */
-  5000                          /* additional IMAGE pools */
+  0,
+  5000
 };
 
-#define MIN_SLOP  50            /* greater than 0 to avoid futile looping */
+#define MIN_SLOP  50
 
 METHODDEF(void *)
 alloc_small(j_common_ptr cinfo, int pool_id, size_t sizeofobject)

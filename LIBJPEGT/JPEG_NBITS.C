@@ -8,7 +8,7 @@
 #include "jpeg_nbits.h"
 #include "jconfigint.h"
 #ifdef WITH_SIMD
-#include "../simd/jsimdconst.h"
+#include "jsimdconst.h"
 #endif
 
 #ifndef USE_CLZ_INTRINSIC

@@ -100,11 +100,11 @@ requant_comp(j_decompress_ptr cinfo, jpeg_component_info *compptr,
 #endif
             if (temp < 0) {
               temp = -temp;
-              temp += qval >> 1; /* for rounding */
+              temp += qval >> 1;
               DIVIDE_BY(temp, qval);
               temp = -temp;
             } else {
-              temp += qval >> 1; /* for rounding */
+              temp += qval >> 1;
               DIVIDE_BY(temp, qval);
             }
             ptr[k] = temp;
@@ -489,15 +489,14 @@ do_crop_ext_reflect(j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
         if (x_crop_blocks > 0) {
           dst_row_ptr = dst_buffer[offset_y] + x_crop_blocks;
           for (dst_blk_x = x_crop_blocks; dst_blk_x > 0;) {
-            src_row_ptr = dst_row_ptr;      /* (re)set axis of reflection */
+            src_row_ptr = dst_row_ptr;
             for (src_blk_x = comp_width; src_blk_x > 0 && dst_blk_x > 0;
                  src_blk_x--, dst_blk_x--) {
-              dst_ptr = *(--dst_row_ptr);   /* destination goes left */
-              src_ptr = *src_row_ptr++;     /* source goes right */
+              dst_ptr = *(--dst_row_ptr);
+              src_ptr = *src_row_ptr++;
               for (k = 0; k < DCTSIZE2; k += 2) {
-                *dst_ptr++ = *src_ptr++;    /* copy even column */
-                *dst_ptr++ = -(*src_ptr++); /* copy odd column with sign
-                                               change */
+                *dst_ptr++ = *src_ptr++;
+                *dst_ptr++ = -(*src_ptr++);
               }
             }
           }
@@ -506,15 +505,14 @@ do_crop_ext_reflect(j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
           dst_row_ptr = dst_buffer[offset_y] + x_crop_blocks + comp_width;
           for (dst_blk_x = compptr->width_in_blocks - x_crop_blocks - comp_width;
                dst_blk_x > 0;) {
-            src_row_ptr = dst_row_ptr;      /* (re)set axis of reflection */
+            src_row_ptr = dst_row_ptr;
             for (src_blk_x = comp_width; src_blk_x > 0 && dst_blk_x > 0;
                  src_blk_x--, dst_blk_x--) {
-              dst_ptr = *dst_row_ptr++;     /* destination goes right */
-              src_ptr = *(--src_row_ptr);   /* source goes left */
+              dst_ptr = *dst_row_ptr++;
+              src_ptr = *(--src_row_ptr);
               for (k = 0; k < DCTSIZE2; k += 2) {
-                *dst_ptr++ = *src_ptr++;    /* copy even column */
-                *dst_ptr++ = -(*src_ptr++); /* copy odd column with sign
-                                               change */
+                *dst_ptr++ = *src_ptr++;
+                *dst_ptr++ = -(*src_ptr++);
               }
             }
           }
@@ -629,28 +627,28 @@ do_reflect(j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
         if (x_wipe_blocks > 0) {
           dst_row_ptr = buffer[offset_y] + x_wipe_blocks;
           for (dst_blk_x = wipe_width; dst_blk_x > 0;) {
-            src_row_ptr = dst_row_ptr;     /* (re)set axis of reflection */
+            src_row_ptr = dst_row_ptr;
             for (src_blk_x = x_wipe_blocks;
                  src_blk_x > 0 && dst_blk_x > 0; src_blk_x--, dst_blk_x--) {
-              dst_ptr = *dst_row_ptr++;    /* destination goes right */
-              src_ptr = *(--src_row_ptr);  /* source goes left */
+              dst_ptr = *dst_row_ptr++;
+              src_ptr = *(--src_row_ptr);
               for (k = 0; k < DCTSIZE2; k += 2) {
-                *dst_ptr++ = *src_ptr++;   /* copy even column */
-                *dst_ptr++ = -(*src_ptr++); /* copy odd column with sign change */
+                *dst_ptr++ = *src_ptr++;
+                *dst_ptr++ = -(*src_ptr++);
               }
             }
           }
         } else if (compptr->width_in_blocks > x_wipe_blocks + wipe_width) {
           dst_row_ptr = buffer[offset_y] + x_wipe_blocks + wipe_width;
           for (dst_blk_x = wipe_width; dst_blk_x > 0;) {
-            src_row_ptr = dst_row_ptr;     /* (re)set axis of reflection */
+            src_row_ptr = dst_row_ptr;
             src_blk_x = compptr->width_in_blocks - x_wipe_blocks - wipe_width;
             for (; src_blk_x > 0 && dst_blk_x > 0; src_blk_x--, dst_blk_x--) {
-              dst_ptr = *(--dst_row_ptr);  /* destination goes left */
-              src_ptr = *src_row_ptr++;    /* source goes right */
+              dst_ptr = *(--dst_row_ptr);
+              src_ptr = *src_row_ptr++;
               for (k = 0; k < DCTSIZE2; k += 2) {
-                *dst_ptr++ = *src_ptr++;   /* copy even column */
-                *dst_ptr++ = -(*src_ptr++); /* copy odd column with sign change */
+                *dst_ptr++ = *src_ptr++;
+                *dst_ptr++ = -(*src_ptr++);
               }
             }
           }
@@ -691,11 +689,11 @@ do_flip_h_no_crop(j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
           ptr1 = buffer[offset_y][blk_x];
           ptr2 = buffer[offset_y][comp_width - blk_x - 1];
           for (k = 0; k < DCTSIZE2; k += 2) {
-            temp1 = *ptr1;      /* swap even column */
+            temp1 = *ptr1;
             temp2 = *ptr2;
             *ptr1++ = temp2;
             *ptr2++ = temp1;
-            temp1 = *ptr1;      /* swap odd column with sign change */
+            temp1 = *ptr1;
             temp2 = *ptr2;
             *ptr1++ = -temp2;
             *ptr2++ = -temp1;
@@ -751,9 +749,8 @@ do_flip_h(j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
             dst_ptr = dst_row_ptr[dst_blk_x];
             src_ptr = src_row_ptr[comp_width - x_crop_blocks - dst_blk_x - 1];
             for (k = 0; k < DCTSIZE2; k += 2) {
-              *dst_ptr++ = *src_ptr++;    /* copy even column */
-              *dst_ptr++ = -(*src_ptr++); /* copy odd column with sign
-                                             change */
+              *dst_ptr++ = *src_ptr++;
+              *dst_ptr++ = -(*src_ptr++);
             }
           } else {
             jcopy_block_row(src_row_ptr + dst_blk_x + x_crop_blocks,
@@ -1416,9 +1413,9 @@ jtransform_request_workspace(j_decompress_ptr srcinfo,
 
   if (info->crop) {
     if (info->crop_xoffset_set == JCROP_UNSET)
-      info->crop_xoffset = 0;   /* default to +0 */
+      info->crop_xoffset = 0;
     if (info->crop_yoffset_set == JCROP_UNSET)
-      info->crop_yoffset = 0;   /* default to +0 */
+      info->crop_yoffset = 0;
     if (info->crop_width_set == JCROP_UNSET) {
       if (info->crop_xoffset >= info->output_width)
         ERREXIT(srcinfo, JERR_BAD_CROP_SPEC);
@@ -1465,13 +1462,13 @@ jtransform_request_workspace(j_decompress_ptr srcinfo,
     }
     if (info->crop_xoffset_set != JCROP_NEG)
       xoffset = info->crop_xoffset;
-    else if (info->crop_width > info->output_width) /* crop extension */
+    else if (info->crop_width > info->output_width)
       xoffset = info->crop_width - info->output_width - info->crop_xoffset;
     else
       xoffset = info->output_width - info->crop_width - info->crop_xoffset;
     if (info->crop_yoffset_set != JCROP_NEG)
       yoffset = info->crop_yoffset;
-    else if (info->crop_height > info->output_height) /* crop extension */
+    else if (info->crop_height > info->output_height)
       yoffset = info->crop_height - info->output_height - info->crop_yoffset;
     else
       yoffset = info->output_height - info->crop_height - info->crop_yoffset;
