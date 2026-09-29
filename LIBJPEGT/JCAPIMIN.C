@@ -176,7 +176,7 @@ GLOBAL(void)
 jpeg_write_marker(j_compress_ptr cinfo, int marker, const JOCTET *dataptr,
                   unsigned int datalen)
 {
-  void (*write_marker_byte) (j_compress_ptr info, int val);
+  void (__cdecl *write_marker_byte) (j_compress_ptr info, int val);
 
   if (cinfo->next_scanline != 0 ||
       (cinfo->global_state != CSTATE_SCANNING &&

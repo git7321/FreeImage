@@ -18,7 +18,7 @@
 typedef struct {
   struct jpeg_upsampler pub;
 
-  void (*upmethod) (j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
+  void (__cdecl *upmethod) (j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
                     JDIMENSION in_row_group_ctr, _JSAMPARRAY output_buf);
 
   int *Cr_r_tab;                /* => table for Cr to R conversion */

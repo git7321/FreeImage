@@ -48,30 +48,30 @@
 typedef struct {
   struct jpeg_entropy_encoder pub;
 
-  void (*AC_first_prepare) (const JCOEF *block,
+  void (__cdecl *AC_first_prepare) (const JCOEF *block,
                             const int *jpeg_natural_order_start, int Sl,
                             int Al, UJCOEF *values, size_t *zerobits);
-  int (*AC_refine_prepare) (const JCOEF *block,
+  int (__cdecl *AC_refine_prepare) (const JCOEF *block,
                             const int *jpeg_natural_order_start, int Sl,
                             int Al, UJCOEF *absvalues, size_t *bits);
 
   boolean gather_statistics;
 
-  JOCTET *next_output_byte;     /* => next byte to write in buffer */
-  size_t free_in_buffer;        /* # of byte spaces remaining in buffer */
-  size_t put_buffer;            /* current bit-accumulation buffer */
-  int put_bits;                 /* # of bits now in it */
-  j_compress_ptr cinfo;         /* link to cinfo (needed for dump_buffer) */
+  JOCTET *next_output_byte;
+  size_t free_in_buffer;
+  size_t put_buffer;
+  int put_bits;
+  j_compress_ptr cinfo;
 
-  int last_dc_val[MAX_COMPS_IN_SCAN]; /* last DC coef for each component */
+  int last_dc_val[MAX_COMPS_IN_SCAN];
 
-  int ac_tbl_no;                /* the table number of the single component */
-  unsigned int EOBRUN;          /* run length of EOBs */
-  unsigned int BE;              /* # of buffered correction bits before MCU */
-  char *bit_buffer;             /* buffer for correction bits (1 per char) */
+  int ac_tbl_no;
+  unsigned int EOBRUN;
+  unsigned int BE;
+  char *bit_buffer;
 
-  unsigned int restarts_to_go;  /* MCUs left in this restart interval */
-  int next_restart_num;         /* next restart number to write (0-7) */
+  unsigned int restarts_to_go;
+  int next_restart_num;
 
   c_derived_tbl *derived_tbls[NUM_HUFF_TBLS];
 

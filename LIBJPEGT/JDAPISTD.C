@@ -293,10 +293,10 @@ read_and_discard_scanlines(j_decompress_ptr cinfo, JDIMENSION num_lines)
   _JSAMPLE dummy_sample[1] = { 0 };
   _JSAMPROW dummy_row = dummy_sample;
   _JSAMPARRAY scanlines = NULL;
-  void (*color_convert) (j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
+  void (__cdecl *color_convert) (j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
                          JDIMENSION input_row, _JSAMPARRAY output_buf,
                          int num_rows) = NULL;
-  void (*color_quantize) (j_decompress_ptr cinfo, _JSAMPARRAY input_buf,
+  void (__cdecl *color_quantize) (j_decompress_ptr cinfo, _JSAMPARRAY input_buf,
                           _JSAMPARRAY output_buf, int num_rows) = NULL;
 
   if (cinfo->cconvert &&

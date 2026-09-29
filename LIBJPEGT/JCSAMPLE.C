@@ -61,7 +61,7 @@
 
 #if BITS_IN_JSAMPLE != 16 || defined(C_LOSSLESS_SUPPORTED)
 
-typedef void (*downsample1_ptr) (j_compress_ptr cinfo,
+typedef void (__cdecl *downsample1_ptr) (j_compress_ptr cinfo,
                                  jpeg_component_info *compptr,
                                  _JSAMPARRAY input_data,
                                  _JSAMPARRAY output_data);

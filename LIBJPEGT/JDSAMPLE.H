@@ -13,7 +13,7 @@
 #include "jpeglib.h"
 #include "jsamplecomp.h"
 
-typedef void (*upsample1_ptr) (j_decompress_ptr cinfo,
+typedef void (__cdecl *upsample1_ptr) (j_decompress_ptr cinfo,
                                jpeg_component_info *compptr,
                                _JSAMPARRAY input_data,
                                _JSAMPARRAY *output_data_ptr);

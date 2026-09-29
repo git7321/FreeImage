@@ -40,7 +40,7 @@
 
 #ifdef C_LOSSLESS_SUPPORTED
 
-typedef void (*predict_difference_method_ptr) (j_compress_ptr cinfo, int ci,
+typedef void (__cdecl *predict_difference_method_ptr) (j_compress_ptr cinfo, int ci,
                                                _JSAMPROW input_buf,
                                                _JSAMPROW prev_row,
                                                JDIFFROW diff_buf,
@@ -53,7 +53,7 @@ typedef struct {
 
   unsigned int restart_rows_to_go[MAX_COMPONENTS];
 
-  void (*scaler_scale) (j_compress_ptr cinfo, _JSAMPROW input_buf,
+  void (__cdecl *scaler_scale) (j_compress_ptr cinfo, _JSAMPROW input_buf,
                         _JSAMPROW output_buf, JDIMENSION width);
 } jpeg_lossless_compressor;
 
@@ -63,7 +63,7 @@ typedef jpeg_lossless_compressor *lossless_comp_ptr;
 
 #ifdef D_LOSSLESS_SUPPORTED
 
-typedef void (*predict_undifference_method_ptr) (j_decompress_ptr cinfo,
+typedef void (__cdecl *predict_undifference_method_ptr) (j_decompress_ptr cinfo,
                                                  int comp_index,
                                                  JDIFFROW diff_buf,
                                                  JDIFFROW prev_row,
@@ -76,7 +76,7 @@ typedef struct {
 
   predict_undifference_method_ptr predict_undifference[MAX_COMPONENTS];
 
-  void (*scaler_scale) (j_decompress_ptr cinfo, JDIFFROW diff_buf,
+  void (__cdecl *scaler_scale) (j_decompress_ptr cinfo, JDIFFROW diff_buf,
                         _JSAMPROW output_buf, JDIMENSION width);
 } jpeg_lossless_decompressor;
 
