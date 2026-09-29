@@ -42,7 +42,7 @@
 #include "jpeglib.h"
 #include "jdmerge.h"
 #ifdef WITH_SIMD
-#include "../simd/jsimd.h"
+#include "jsimd.h"
 #endif
 #ifdef WITH_PROFILE
 #include "tjutil.h"
@@ -176,10 +176,8 @@ build_ycc_rgb_table(j_decompress_ptr cinfo)
   for (i = 0, x = -_CENTERJSAMPLE; i <= _MAXJSAMPLE; i++, x++) {
     upsample->Cr_r_tab[i] = (int)
                     RIGHT_SHIFT(FIX(1.40200) * x + ONE_HALF, SCALEBITS);
-    /* Cb=>B value is nearest int to 1.77200 * x */
     upsample->Cb_b_tab[i] = (int)
                     RIGHT_SHIFT(FIX(1.77200) * x + ONE_HALF, SCALEBITS);
-    /* Cr=>G value is scaled-up -0.71414 * x */
     upsample->Cr_g_tab[i] = (-FIX(0.71414)) * x;
     upsample->Cb_g_tab[i] = (-FIX(0.34414)) * x + ONE_HALF;
   }
@@ -205,7 +203,6 @@ merged_2v_upsample(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
   JDIMENSION num_rows;
 
   if (upsample->spare_full) {
-    /* If we have a spare row saved from a previous cycle, just return it. */
     JDIMENSION size = upsample->out_row_width;
     if (cinfo->out_color_space == JCS_RGB565)
       size = cinfo->output_width * 2;
@@ -214,16 +211,12 @@ merged_2v_upsample(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
     num_rows = 1;
     upsample->spare_full = FALSE;
   } else {
-    /* Figure number of rows to return to caller. */
     num_rows = 2;
-    /* Not more than the distance to the end of the image. */
     if (num_rows > upsample->rows_to_go)
       num_rows = upsample->rows_to_go;
-    /* And not more than what the client can accept: */
     out_rows_avail -= *out_row_ctr;
     if (num_rows > out_rows_avail)
       num_rows = out_rows_avail;
-    /* Create output pointer array for upsampler. */
     work_ptrs[0] = output_buf[*out_row_ctr];
     if (num_rows > 1) {
       work_ptrs[1] = output_buf[*out_row_ctr + 1];
@@ -231,7 +224,6 @@ merged_2v_upsample(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
       work_ptrs[1] = upsample->spare_row;
       upsample->spare_full = TRUE;
     }
-    /* Now do the upsampling. */
 #ifdef WITH_PROFILE
     cinfo->master->start = getTime();
 #endif

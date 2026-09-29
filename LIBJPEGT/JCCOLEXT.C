@@ -36,13 +36,10 @@ rgb_ycc_convert(j_compress_ptr cinfo, _JSAMPARRAY input_buf,
       g = RANGE_LIMIT(inptr[RGB_GREEN]);
       b = RANGE_LIMIT(inptr[RGB_BLUE]);
       inptr += RGB_PIXELSIZE;
-      /* Y */
       outptr0[col] = (_JSAMPLE)((ctab[r + R_Y_OFF] + ctab[g + G_Y_OFF] +
                                  ctab[b + B_Y_OFF]) >> SCALEBITS);
-      /* Cb */
       outptr1[col] = (_JSAMPLE)((ctab[r + R_CB_OFF] + ctab[g + G_CB_OFF] +
                                  ctab[b + B_CB_OFF]) >> SCALEBITS);
-      /* Cr */
       outptr2[col] = (_JSAMPLE)((ctab[r + R_CR_OFF] + ctab[g + G_CR_OFF] +
                                  ctab[b + B_CR_OFF]) >> SCALEBITS);
     }
@@ -75,7 +72,6 @@ rgb_gray_convert(j_compress_ptr cinfo, _JSAMPARRAY input_buf,
       g = RANGE_LIMIT(inptr[RGB_GREEN]);
       b = RANGE_LIMIT(inptr[RGB_BLUE]);
       inptr += RGB_PIXELSIZE;
-      /* Y */
       outptr[col] = (_JSAMPLE)((ctab[r + R_Y_OFF] + ctab[g + G_Y_OFF] +
                                 ctab[b + B_Y_OFF]) >> SCALEBITS);
     }

@@ -24,7 +24,7 @@
 #include "jinclude.h"
 #include "jpeglib.h"
 #ifdef WITH_SIMD
-#include "../simd/jsimd.h"
+#include "jsimd.h"
 #endif
 #include "jchuff.h"
 #include <limits.h>

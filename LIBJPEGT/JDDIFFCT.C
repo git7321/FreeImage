@@ -30,14 +30,13 @@
 typedef struct {
   struct jpeg_d_coef_controller pub;
 
-  JDIMENSION MCU_ctr;           /* counts MCUs processed in current row */
-  unsigned int restart_rows_to_go;      /* MCU rows left in this restart
-                                           interval */
-  unsigned int MCU_vert_offset;         /* counts MCU rows within iMCU row */
-  unsigned int MCU_rows_per_iMCU_row;   /* number of such rows needed */
+  JDIMENSION MCU_ctr;
+  unsigned int restart_rows_to_go;
+  unsigned int MCU_vert_offset;
+  unsigned int MCU_rows_per_iMCU_row;
 
-  JDIFFARRAY diff_buf[MAX_COMPONENTS];  /* iMCU row of differences */
-  JDIFFARRAY undiff_buf[MAX_COMPONENTS]; /* iMCU row of undiff'd samples */
+  JDIFFARRAY diff_buf[MAX_COMPONENTS];
+  JDIFFARRAY undiff_buf[MAX_COMPONENTS];
 
 #ifdef D_MULTISCAN_FILES_SUPPORTED
   jvirt_sarray_ptr whole_image[MAX_COMPONENTS];

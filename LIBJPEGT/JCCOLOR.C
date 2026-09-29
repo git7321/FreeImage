@@ -16,7 +16,7 @@
 #include "jinclude.h"
 #include "jpeglib.h"
 #ifdef WITH_SIMD
-#include "../simd/jsimd.h"
+#include "jsimd.h"
 #endif
 #include "jsamplecomp.h"
 
@@ -209,13 +209,10 @@ cmyk_ycck_convert(j_compress_ptr cinfo, _JSAMPARRAY input_buf,
       b = _MAXJSAMPLE - RANGE_LIMIT(inptr[2]);
       outptr3[col] = inptr[3];
       inptr += 4;
-      /* Y */
       outptr0[col] = (_JSAMPLE)((ctab[r + R_Y_OFF] + ctab[g + G_Y_OFF] +
                                  ctab[b + B_Y_OFF]) >> SCALEBITS);
-      /* Cb */
       outptr1[col] = (_JSAMPLE)((ctab[r + R_CB_OFF] + ctab[g + G_CB_OFF] +
                                  ctab[b + B_CB_OFF]) >> SCALEBITS);
-      /* Cr */
       outptr2[col] = (_JSAMPLE)((ctab[r + R_CR_OFF] + ctab[g + G_CR_OFF] +
                                  ctab[b + B_CR_OFF]) >> SCALEBITS);
     }

@@ -21,7 +21,7 @@
 #include "jinclude.h"
 #include "jpeglib.h"
 
-typedef enum {                  /* JPEG marker codes */
+typedef enum {
   M_SOF0  = 0xc0,
   M_SOF1  = 0xc1,
   M_SOF2  = 0xc2,
@@ -826,13 +826,13 @@ read_markers(j_decompress_ptr cinfo)
         return JPEG_SUSPENDED;
       break;
 
-    case M_SOF5:                /* Differential sequential, Huffman */
-    case M_SOF6:                /* Differential progressive, Huffman */
-    case M_SOF7:                /* Differential lossless, Huffman */
-    case M_JPG:                 /* Reserved for JPEG extensions */
-    case M_SOF13:               /* Differential sequential, arithmetic */
-    case M_SOF14:               /* Differential progressive, arithmetic */
-    case M_SOF15:               /* Differential lossless, arithmetic */
+    case M_SOF5:
+    case M_SOF6:
+    case M_SOF7:
+    case M_JPG:
+    case M_SOF13:
+    case M_SOF14:
+    case M_SOF15:
       ERREXIT1(cinfo, JERR_SOF_UNSUPPORTED, cinfo->unread_marker);
       break;
 

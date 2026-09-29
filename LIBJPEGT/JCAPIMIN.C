@@ -25,7 +25,7 @@
 #include "jpeglib.h"
 #include "jcmaster.h"
 #ifdef WITH_SIMD
-#include "../simd/jsimdconst.h"
+#include "jsimdconst.h"
 #endif
 
 GLOBAL(void)

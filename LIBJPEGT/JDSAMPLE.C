@@ -27,7 +27,7 @@
 #include "jinclude.h"
 #include "jdsample.h"
 #ifdef WITH_SIMD
-#include "../simd/jsimd.h"
+#include "jsimd.h"
 #endif
 #include "jpegapicomp.h"
 #ifdef WITH_PROFILE

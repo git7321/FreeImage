@@ -195,18 +195,18 @@ process_data_context_main(j_decompress_ptr cinfo, _JSAMPARRAY output_buf,
                                         main_ptr->rowgroups_avail, output_buf,
                                         out_row_ctr, out_rows_avail);
     if (main_ptr->rowgroup_ctr < main_ptr->rowgroups_avail)
-      return;                   /* Need to suspend */
+      return;
     main_ptr->context_state = CTX_PREPARE_FOR_IMCU;
     if (*out_row_ctr >= out_rows_avail)
       return;
-    FALLTHROUGH                 /*FALLTHROUGH*/
+    FALLTHROUGH
   case CTX_PREPARE_FOR_IMCU:
     main_ptr->rowgroup_ctr = 0;
     main_ptr->rowgroups_avail = (JDIMENSION)(cinfo->_min_DCT_scaled_size - 1);
     if (main_ptr->iMCU_row_ctr == cinfo->total_iMCU_rows)
       set_bottom_pointers(cinfo);
     main_ptr->context_state = CTX_PROCESS_IMCU;
-    FALLTHROUGH                 /*FALLTHROUGH*/
+    FALLTHROUGH
   case CTX_PROCESS_IMCU:
     (*cinfo->post->_post_process_data) (cinfo,
                                         main_ptr->xbuffer[main_ptr->whichptr],
@@ -214,10 +214,10 @@ process_data_context_main(j_decompress_ptr cinfo, _JSAMPARRAY output_buf,
                                         main_ptr->rowgroups_avail, output_buf,
                                         out_row_ctr, out_rows_avail);
     if (main_ptr->rowgroup_ctr < main_ptr->rowgroups_avail)
-      return;                   /* Need to suspend */
+      return;
     if (main_ptr->iMCU_row_ctr == 1)
       set_wraparound_pointers(cinfo);
-    main_ptr->whichptr ^= 1;    /* 0=>1 or 1=>0 */
+    main_ptr->whichptr ^= 1;
     main_ptr->buffer_full = FALSE;
     main_ptr->rowgroup_ctr = (JDIMENSION)(cinfo->_min_DCT_scaled_size + 1);
     main_ptr->rowgroups_avail = (JDIMENSION)(cinfo->_min_DCT_scaled_size + 2);

@@ -25,7 +25,7 @@
 #include "jpeglib.h"
 #include "jdct.h"
 #ifdef WITH_SIMD
-#include "../simd/jsimddct.h"
+#include "jsimddct.h"
 #endif
 #include "jpegapicomp.h"
 

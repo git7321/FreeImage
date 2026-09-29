@@ -18,7 +18,7 @@
 #include "jinclude.h"
 #include "jpeglib.h"
 #ifdef WITH_SIMD
-#include "../simd/jsimd.h"
+#include "jsimd.h"
 #endif
 #include "jsamplecomp.h"
 
@@ -28,26 +28,24 @@ typedef struct {
   struct jpeg_color_deconverter pub;
 
 #if BITS_IN_JSAMPLE != 16
-  /* Private state for YCC->RGB conversion */
-  int *Cr_r_tab;                /* => table for Cr to R conversion */
-  int *Cb_b_tab;                /* => table for Cb to B conversion */
-  JLONG *Cr_g_tab;              /* => table for Cr to G conversion */
-  JLONG *Cb_g_tab;              /* => table for Cb to G conversion */
+  int *Cr_r_tab;
+  int *Cb_b_tab;
+  JLONG *Cr_g_tab;
+  JLONG *Cb_g_tab;
 
-  /* Private state for RGB->Y conversion */
-  JLONG *rgb_y_tab;             /* => table for RGB to Y conversion */
+  JLONG *rgb_y_tab;
 #endif
 } my_color_deconverter;
 
 typedef my_color_deconverter *my_cconvert_ptr;
 
-#define SCALEBITS       16      /* speediest right-shift on some machines */
+#define SCALEBITS       16
 #define ONE_HALF        ((JLONG)1 << (SCALEBITS - 1))
 #define FIX(x)          ((JLONG)((x) * (1L << SCALEBITS) + 0.5))
 
-#define R_Y_OFF         0                       /* offset to R => Y section */
-#define G_Y_OFF         (1 * (_MAXJSAMPLE + 1)) /* offset to G => Y section */
-#define B_Y_OFF         (2 * (_MAXJSAMPLE + 1)) /* etc. */
+#define R_Y_OFF         0
+#define G_Y_OFF         (1 * (_MAXJSAMPLE + 1))
+#define B_Y_OFF         (2 * (_MAXJSAMPLE + 1))
 #define TABLE_SIZE      (3 * (_MAXJSAMPLE + 1))
 
 #include "jdcolext.c"
@@ -240,7 +238,6 @@ rgb_gray_convert(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
       r = inptr0[col];
       g = inptr1[col];
       b = inptr2[col];
-      /* Y */
       outptr[col] = (_JSAMPLE)((ctab[r + R_Y_OFF] + ctab[g + G_Y_OFF] +
                                 ctab[b + B_Y_OFF]) >> SCALEBITS);
     }
@@ -341,11 +338,11 @@ ycck_cmyk_convert(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
       y  = inptr0[col];
       cb = inptr1[col];
       cr = inptr2[col];
-      outptr[0] = range_limit[_MAXJSAMPLE - (y + Crrtab[cr])];  /* red */
-      outptr[1] = range_limit[_MAXJSAMPLE - (y +                /* green */
+      outptr[0] = range_limit[_MAXJSAMPLE - (y + Crrtab[cr])];
+      outptr[1] = range_limit[_MAXJSAMPLE - (y +
                               ((int)RIGHT_SHIFT(Cbgtab[cb] + Crgtab[cr],
                                                  SCALEBITS)))];
-      outptr[2] = range_limit[_MAXJSAMPLE - (y + Cbbtab[cb])];  /* blue */
+      outptr[2] = range_limit[_MAXJSAMPLE - (y + Cbbtab[cb])];
       outptr[3] = inptr3[col];
       outptr += 4;
     }
@@ -379,7 +376,6 @@ static const JLONG dither_matrix[4] = {
   0x030B0109,
   0x0F070D05
 };
-
 
 static INLINE boolean is_big_endian(void)
 {
@@ -425,7 +421,6 @@ static INLINE boolean is_big_endian(void)
 #undef gray_rgb565_convert_internal
 #undef gray_rgb565D_convert_internal
 
-
 METHODDEF(void)
 ycc_rgb565_convert(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
                    JDIMENSION input_row, _JSAMPARRAY output_buf, int num_rows)
@@ -435,7 +430,6 @@ ycc_rgb565_convert(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
   else
     ycc_rgb565_convert_le(cinfo, input_buf, input_row, output_buf, num_rows);
 }
-
 
 METHODDEF(void)
 ycc_rgb565D_convert(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
@@ -447,7 +441,6 @@ ycc_rgb565D_convert(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
     ycc_rgb565D_convert_le(cinfo, input_buf, input_row, output_buf, num_rows);
 }
 
-
 METHODDEF(void)
 rgb_rgb565_convert(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
                    JDIMENSION input_row, _JSAMPARRAY output_buf, int num_rows)
@@ -457,7 +450,6 @@ rgb_rgb565_convert(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
   else
     rgb_rgb565_convert_le(cinfo, input_buf, input_row, output_buf, num_rows);
 }
-
 
 METHODDEF(void)
 rgb_rgb565D_convert(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
@@ -469,7 +461,6 @@ rgb_rgb565D_convert(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
     rgb_rgb565D_convert_le(cinfo, input_buf, input_row, output_buf, num_rows);
 }
 
-
 METHODDEF(void)
 gray_rgb565_convert(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
                     JDIMENSION input_row, _JSAMPARRAY output_buf, int num_rows)
@@ -479,7 +470,6 @@ gray_rgb565_convert(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,
   else
     gray_rgb565_convert_le(cinfo, input_buf, input_row, output_buf, num_rows);
 }
-
 
 METHODDEF(void)
 gray_rgb565D_convert(j_decompress_ptr cinfo, _JSAMPIMAGE input_buf,

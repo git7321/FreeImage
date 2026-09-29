@@ -29,11 +29,11 @@
 typedef struct {
   struct jpeg_d_post_controller pub;
 
-  jvirt_sarray_ptr whole_image; /* virtual array, or NULL if one-pass */
-  _JSAMPARRAY buffer;           /* strip buffer, or current strip of virtual */
-  JDIMENSION strip_height;      /* buffer size in rows */
-  JDIMENSION starting_row;      /* row # of first row in current strip */
-  JDIMENSION next_row;          /* index of next row to fill/empty in strip */
+  jvirt_sarray_ptr whole_image;
+  _JSAMPARRAY buffer;
+  JDIMENSION strip_height;
+  JDIMENSION starting_row;
+  JDIMENSION next_row;
 } my_post_controller;
 
 typedef my_post_controller *my_post_ptr;

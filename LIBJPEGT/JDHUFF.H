@@ -22,18 +22,14 @@
 #define HUFF_LOOKAHEAD  8
 
 typedef struct {
-  /* Basic tables: (element [0] of each array is unused) */
   JLONG maxcode[18];            /* largest code of length k (-1 if none) */
-  /* (maxcode[17] is a sentinel to ensure jpeg_huff_decode terminates) */
   JLONG valoffset[18];          /* huffval[] offset for codes of length k */
 
-  /* Link to public Huffman table (needed only in jpeg_huff_decode) */
   JHUFF_TBL *pub;
 
   int lookup[1 << HUFF_LOOKAHEAD];
 } d_derived_tbl;
 
-/* Expand a Huffman table definition into the derived format */
 EXTERN(void) jpeg_make_d_derived_tbl(j_decompress_ptr cinfo, boolean isDC,
                                      int tblno, d_derived_tbl **pdtbl);
 
@@ -71,7 +67,6 @@ typedef struct {                /* Bitreading working state within an MCU */
   j_decompress_ptr cinfo;       /* back link to decompress master record */
 } bitread_working_state;
 
-/* Macros to declare and load/save bitread local variables. */
 #define BITREAD_STATE_VARS \
   register bit_buf_type get_buffer; \
   register int bits_left; \
