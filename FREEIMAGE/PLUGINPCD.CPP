@@ -127,19 +127,19 @@ Load(FreeImageIO *io, fi_handle handle, int page, int flags, void *data) {
 
 	// to make absolute seeks possible we store the current position in the file
 	
-	long offset_in_file = io->tell_proc(handle);
+	INT64 offset_in_file = io->tell_proc(handle);
 	long seek = 0;
 
-	// decide which bitmap in the cabinet to load
+	// decide which bitmap in the cabinet to load: PCD_BASE, PCD_BASEDIV4 or PCD_BASEDIV16, in the two low bits
 
-	switch (flags) {
-		case PCD_BASEDIV4 :
+	switch (flags & 0x03) {
+		case PCD_BASEDIV16 :
 			seek = 0x2000;
 			width = 192;
 			height = 128;
 			break;
 
-		case PCD_BASEDIV16 :
+		case PCD_BASEDIV4 :
 			seek = 0xB800;
 			width = 384;
 			height = 256;
@@ -179,7 +179,7 @@ Load(FreeImageIO *io, fi_handle handle, int page, int flags, void *data) {
 
 		// seek to the part where the bitmap data begins
 
-		io->seek_proc(handle, offset_in_file, SEEK_SET);
+		io->seek_proc(handle, (long)offset_in_file, SEEK_SET);
 		io->seek_proc(handle, seek, SEEK_CUR);
 
 		// read the data

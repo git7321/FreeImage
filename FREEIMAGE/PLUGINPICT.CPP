@@ -91,9 +91,6 @@ Read8(FreeImageIO *io, fi_handle handle) {
 
 static WORD
 Read16(FreeImageIO *io, fi_handle handle) {
-	// reads a two-byte big-endian integer from the given file and returns its value.
-	// assumes unsigned.
-	
 	unsigned hi = Read8(io, handle);
 	unsigned lo = Read8(io, handle);
 	return (WORD)(lo + (hi << 8));
@@ -101,17 +98,12 @@ Read16(FreeImageIO *io, fi_handle handle) {
 
 static unsigned
 Read32(FreeImageIO *io, fi_handle handle) {
-	// reads a four-byte big-endian integer from the given file and returns its value.
-	// assumes unsigned.
-	
 	unsigned b3 = Read8(io, handle);
 	unsigned b2 = Read8(io, handle);
 	unsigned b1 = Read8(io, handle);
 	unsigned b0 = Read8(io, handle);
 	return (b3 << 24) + (b2 << 16) + (b1 << 8) + b0;
 }
-
-// ----------------------------------------------------------
 
 struct OpDef
 {
@@ -120,7 +112,6 @@ struct OpDef
 	const char * description;
 };
 
-// for reserved opcodes
 #define res(length) { "reserved", (length), "reserved for Apple use" }
 #define RGB_LEN 6
 #define WORD_LEN -1
@@ -292,8 +283,6 @@ static OpDef optable[] =
 /* 0xa1 */  { "LongComment",      NA, "kind (word), size (word), data" }
 };
 
-// ----------------------------------------------------------
-
 struct MacRect
 {
 	WORD top;
@@ -304,8 +293,6 @@ struct MacRect
 
 struct MacpixMap
 {
-	// Ptr baseAddr              // Not used in file.
-	// short rowBytes            // read in seperatly.
 	struct MacRect Bounds;
 	WORD version;
 	WORD packType;
@@ -334,12 +321,10 @@ struct MacPoint
 	WORD y;
 };
 
-struct MacPattern // Klaube
+struct MacPattern
 {
 	BYTE pix[64];
 };
-
-// ----------------------------------------------------------
 
 static void 
 ReadRect( FreeImageIO *io, fi_handle handle, MacRect* rect ) {
@@ -367,9 +352,6 @@ ReadPixmap( FreeImageIO *io, fi_handle handle, MacpixMap* pPixMap ) {
 	pPixMap->pmReserved = Read32( io, handle );
 }
 
-/**
-Reads a mac color table into a bitmap palette.
-*/
 static void 
 ReadColorTable( FreeImageIO *io, fi_handle handle, WORD* pNumColors, RGBQUAD* pPal ) {
 	LONG        ctSeed;
@@ -385,34 +367,25 @@ ReadColorTable( FreeImageIO *io, fi_handle handle, WORD* pNumColors, RGBQUAD* pP
 	for (i = 0; i < numColors; i++) {
 		val = Read16( io, handle );
 		if (ctFlags & 0x8000) {
-			// The indicies in a device colour table are bogus and
-			// usually == 0, so I assume we allocate up the list of
-			// colours in order.
 			val = (WORD)i;
 		}
 		if (val >= numColors) {
 			throw "pixel value greater than color table size.";
 		}
-		// Mac colour tables contain 16-bit values for R, G, and B...
 		pPal[val].rgbRed = ((BYTE) (((WORD) (Read16( io, handle )) >> 8) & 0xFF));
 		pPal[val].rgbGreen = ((BYTE) (((WORD) (Read16( io, handle )) >> 8) & 0xFF));
 		pPal[val].rgbBlue = ((BYTE) (((WORD) (Read16( io, handle )) >> 8) & 0xFF));
 	}
 }
 
-/**
-skips unneeded packbits.
-pixelSize == Source bits per pixel.
-*/
 static void 
 SkipBits( FreeImageIO *io, fi_handle handle, MacRect* bounds, WORD rowBytes, int pixelSize ) {
 	int    i;
-	WORD   pixwidth;           // bytes per row when uncompressed.
+	WORD   pixwidth;
 	
 	int height = bounds->bottom - bounds->top;
 	int width = bounds->right - bounds->left;
 	
-	// High bit of rowBytes is flag.
 	if (pixelSize <= 8) {
 		rowBytes &= 0x7fff;
 	}
@@ -429,7 +402,7 @@ SkipBits( FreeImageIO *io, fi_handle handle, MacRect* bounds, WORD rowBytes, int
 	}
 	else {
 		for (i = 0; i < height; i++) {
-			int lineLen;            // length of source line in bytes.
+			int lineLen;
 			if (rowBytes > 250) {
 				lineLen = Read16( io, handle );
 			} else {
@@ -440,30 +413,22 @@ SkipBits( FreeImageIO *io, fi_handle handle, MacRect* bounds, WORD rowBytes, int
 	}
 }
 
-/**
-Skip polygon or region
-*/
 static void 
 SkipPolyOrRegion( FreeImageIO *io, fi_handle handle ) {
 	WORD len = Read16( io, handle ) - 2;
 	io->seek_proc(handle, len, SEEK_CUR);	
 }
 
-/**
-Width in bytes for 8 bpp or less.
-Width in pixels for 16 bpp.
-Expands Width units to 32-bit pixel data.
-*/
 static void 
 expandBuf( FreeImageIO *io, fi_handle handle, int width, int bpp, BYTE* dst ) { 
 	switch (bpp) {
 		case 16:
 			for ( int i=0; i<width; i++) {
 				WORD src = Read16( io, handle );
-				dst[ FI_RGBA_BLUE ] = (src & 31)*8;				// Blue
-				dst[ FI_RGBA_GREEN ] = ((src >> 5) & 31)*8;		// Green
-				dst[ FI_RGBA_RED ] = ((src >> 10) & 31)*8;		// Red
-				dst[ FI_RGBA_ALPHA ] = 0xFF;					// Alpha
+				dst[ FI_RGBA_BLUE ] = (src & 31)*8;
+				dst[ FI_RGBA_GREEN ] = ((src >> 5) & 31)*8;
+				dst[ FI_RGBA_RED ] = ((src >> 10) & 31)*8;
+				dst[ FI_RGBA_ALPHA ] = 0xFF;
 				dst += 4;
 			}
 			break;
@@ -472,10 +437,6 @@ expandBuf( FreeImageIO *io, fi_handle handle, int width, int bpp, BYTE* dst ) {
 	}
 }
 
-/**
-Expands Width units to 8-bit pixel data.
-Max. 8 bpp source format.
-*/
 static void 
 expandBuf8( FreeImageIO *io, fi_handle handle, int width, int bpp, BYTE* dst )
 {
@@ -490,7 +451,7 @@ expandBuf8( FreeImageIO *io, fi_handle handle, int width, int bpp, BYTE* dst )
 				*(dst+1) = (src & 15);
 				dst += 2;
 			}
-			if (width & 1) { // Odd Width?
+			if (width & 1) {
 				WORD src = Read8( io, handle );
 				*dst = (src >> 4) & 15;
 				dst++;
@@ -505,7 +466,7 @@ expandBuf8( FreeImageIO *io, fi_handle handle, int width, int bpp, BYTE* dst )
 				*(dst+3) = (src & 3);
 				dst += 4;
 			}
-			if (width & 3)  { // Check for leftover pixels
+			if (width & 3)  {
 				for (int i = 6; i > 8 - (width & 3) * 2; i -= 2) {
 					WORD src = Read8( io, handle );
 					*dst = (src >> i) & 3;
@@ -526,7 +487,7 @@ expandBuf8( FreeImageIO *io, fi_handle handle, int width, int bpp, BYTE* dst )
 				*(dst+7) = (src  & 1);
 				dst += 8;
 			}
-			if (width & 7) {  // Check for leftover pixels
+			if (width & 7) {
 				for (int i = 7; i > (8-width & 7); i--) {
 					WORD src = Read8( io, handle );
 					*dst = (src >> i) & 1;
@@ -542,25 +503,20 @@ expandBuf8( FreeImageIO *io, fi_handle handle, int width, int bpp, BYTE* dst )
 static BYTE* 
 UnpackPictRow( FreeImageIO *io, fi_handle handle, BYTE* pLineBuf, int width, int rowBytes, int srcBytes ) {	
 
-	if (rowBytes < 8) { // Ah-ha!  The bits aren't actually packed.  This will be easy.
+	if (rowBytes < 8) {
 		io->read_proc( pLineBuf, rowBytes, 1, handle );
 	}
 	else {
 		BYTE* pCurPixel = pLineBuf;
 		
-		// Unpack RLE. The data is packed bytewise.
 		for (int j = 0; j < srcBytes; )	{
 			BYTE FlagCounter = Read8( io, handle );
 			if (FlagCounter & 0x80) {
 				if (FlagCounter == 0x80) {
-					// Special case: repeat value of 0.
-					// Apple says ignore.
 					j++;
 				} else { 
-					// Packed data.
 					int len = ((FlagCounter ^ 255) & 255) + 2;					
 					BYTE p = Read8( io, handle );
-					// Clamp to remaining buffer to prevent out-of-bounds write
 					int remaining = (int)(pLineBuf + rowBytes - pCurPixel);
 					if (len > remaining) {
 						len = remaining;
@@ -573,9 +529,7 @@ UnpackPictRow( FreeImageIO *io, fi_handle handle, BYTE* pLineBuf, int width, int
 				}
 			}
 			else { 
-				// Unpacked data
 				int len = (FlagCounter & 255) + 1;
-				// Clamp to remaining buffer to prevent out-of-bounds write
 				int remaining = (int)(pLineBuf + rowBytes - pCurPixel);
 				if (len > remaining) {
 					len = remaining;
@@ -592,12 +546,6 @@ UnpackPictRow( FreeImageIO *io, fi_handle handle, BYTE* pLineBuf, int width, int
 	return pLineBuf;
 }
 
-/**
-This routine decompresses BitsRects with a packType of 4 (and 32 bits per pixel). 
-In this format, each line is separated into 8-bit-bitplanes and then compressed via RLE. 
-To decode, the routine decompresses each line & then juggles the bytes around to get pixel-oriented data.
-NumBitPlanes == 3 if RGB, 4 if RGBA
-*/
 static void 
 Unpack32Bits( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, MacRect* bounds, WORD rowBytes, int numPlanes ) {
 	int height = bounds->bottom - bounds->top;
@@ -607,12 +555,11 @@ Unpack32Bits( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, MacRect* bounds,
 		rowBytes = (WORD)( width * 4 );
 	}
 	
-	BYTE* pLineBuf = (BYTE*)malloc( rowBytes ); // Let's allocate enough for 4 bit planes
+	BYTE* pLineBuf = (BYTE*)malloc( rowBytes );
 	if ( pLineBuf )	{
 		try	{
 			for ( int i = 0; i < height; i++ ) { 
-				// for each line do...
-				int linelen;            // length of source line in bytes.
+				int linelen;
 				if (rowBytes > 250) {
 					linelen = Read16( io, handle );
 				} else {
@@ -621,26 +568,22 @@ Unpack32Bits( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, MacRect* bounds,
 				
 				BYTE* pBuf = UnpackPictRow( io, handle, pLineBuf, width, rowBytes, linelen );
 				
-				// Convert plane-oriented data into pixel-oriented data &
-				// copy into destination bitmap.
 				BYTE* dst = (BYTE*)FreeImage_GetScanLine( dib, height - 1 - i);
 				
 				if ( numPlanes == 3 ) {
 					for ( int j = 0; j < width; j++ ) { 
-						// For each pixel in line...
-						dst[ FI_RGBA_BLUE ] = (*(pBuf+width*2));     // Blue
-						dst[ FI_RGBA_GREEN ] = (*(pBuf+width));       // Green
-						dst[ FI_RGBA_RED ] = (*pBuf);             // Red
+						dst[ FI_RGBA_BLUE ] = (*(pBuf+width*2));
+						dst[ FI_RGBA_GREEN ] = (*(pBuf+width));
+						dst[ FI_RGBA_RED ] = (*pBuf);
 						dst[ FI_RGBA_ALPHA ] = (0xFF);
 						dst += 4;
 						pBuf++;
 					}
 				} else {
 					for ( int j = 0; j < width; j++ ) { 
-						// For each pixel in line...
-						dst[ FI_RGBA_BLUE ] = (*(pBuf+width*3));     // Blue
-						dst[ FI_RGBA_GREEN ] = (*(pBuf+width*2));     // Green
-						dst[ FI_RGBA_RED ] = (*(pBuf+width));       // Red
+						dst[ FI_RGBA_BLUE ] = (*(pBuf+width*3));
+						dst[ FI_RGBA_GREEN ] = (*(pBuf+width*2));
+						dst[ FI_RGBA_RED ] = (*(pBuf+width));
 						dst[ FI_RGBA_ALPHA ] = (*pBuf);
 						dst += 4;
 						pBuf++;
@@ -656,18 +599,11 @@ Unpack32Bits( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, MacRect* bounds,
 	free( pLineBuf );
 }
 
-/**
-Decompression routine for 8 bpp. 
-rowBytes is the number of bytes each source row would take if it were uncompressed.
-This _isn't_ equal to the number of pixels in the row - it seems apple pads the data to a word boundary and then compresses it. 
-Of course, we have to decompress the excess data and then throw it away.
-*/
 static void 
 Unpack8Bits( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, MacRect* bounds, WORD rowBytes ) {	
 	int height = bounds->bottom - bounds->top;
 	int width = bounds->right - bounds->left;
 	
-	// High bit of rowBytes is flag.
 	rowBytes &= 0x7fff;
 	
 	if (rowBytes == 0) {
@@ -675,7 +611,7 @@ Unpack8Bits( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, MacRect* bounds, 
 	}
 	
 	for ( int i = 0; i < height; i++ ) {
-		int linelen;            // length of source line in bytes.
+		int linelen;
 		if (rowBytes > 250) {
 			linelen = Read16( io, handle );
 		} else {
@@ -686,16 +622,9 @@ Unpack8Bits( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, MacRect* bounds, 
 	}
 }
 
-/**
-Decompression routine for everything but 8 & 32 bpp. 
-This routine is slower than the two routines above since it has to deal with a lot of special cases :-(.
-It's also a bit chaotic because of these special cases...
-unpack8bits is basically a dumber version of unpackbits.
-pixelSize == Source bits per pixel.
-*/
 static void 
 UnpackBits( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, MacRect* bounds, WORD rowBytes, int pixelSize ) {
-	WORD   pixwidth;           // bytes per row when uncompressed.
+	WORD   pixwidth;
 	int    pkpixsize;
 	int    PixelPerRLEUnit;
 
@@ -704,14 +633,13 @@ UnpackBits( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, MacRect* bounds, W
 	int height = bounds->bottom - bounds->top;
 	int width = bounds->right - bounds->left;
 	
-	// High bit of rowBytes is flag.
 	if (pixelSize <= 8) {
 		rowBytes &= 0x7fff;
 	}
 	
 	pixwidth = (WORD)width;
-	pkpixsize = 1;          // RLE unit: one byte for everything...
-	if (pixelSize == 16) {    // ...except 16 bpp.
+	pkpixsize = 1;
+	if (pixelSize == 16) {
 		pkpixsize = 2;
 		pixwidth *= 2;
 	}
@@ -721,8 +649,6 @@ UnpackBits( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, MacRect* bounds, W
 	}
 	
 	{
-		// I allocate the temporary line buffer here. I allocate too
-		// much memory to compensate for sloppy (& hence fast) decompression.
 		switch (pixelSize) {
 			case 1:
 				PixelPerRLEUnit = 8;
@@ -745,7 +671,6 @@ UnpackBits( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, MacRect* bounds, W
 		}
 		
 		if (rowBytes < 8) { 
-			// ah-ha!  The bits aren't actually packed.  This will be easy.
 			for ( int i = 0; i < height; i++ ) {
 				BYTE* dst = (BYTE*)FreeImage_GetScanLine( dib, height - 1 - i);
 				if (pixelSize == 16) {
@@ -757,8 +682,7 @@ UnpackBits( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, MacRect* bounds, W
 		}
 		else {
 			for ( int i = 0; i < height; i++ ) { 
-				// For each line do...
-				int    linelen;            // length of source line in bytes.
+				int    linelen;
 				if (rowBytes > 250) {
 					linelen = Read16( io, handle );
 				} else {
@@ -768,25 +692,18 @@ UnpackBits( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, MacRect* bounds, W
 				BYTE* dst = (BYTE*)FreeImage_GetScanLine( dib, height - 1 - i);
 				BYTE FlagCounter;
 				
-				// Unpack RLE. The data is packed bytewise - except for
-				// 16 bpp data, which is packed per pixel :-(.
 				for ( int j = 0; j < linelen; ) {
 					FlagCounter = Read8( io, handle );
 					if (FlagCounter & 0x80) {
 						if (FlagCounter == 0x80) {
-							// Special case: repeat value of 0.
-							// Apple says ignore.
 							j++;
 						}
 						else { 
-							// Packed data.
 							int len = ((FlagCounter ^ 255) & 255) + 2;
 							
-							// This is slow for some formats...
 							if (pixelSize == 16) {
 								expandBuf( io, handle, 1, pixelSize, dst );
 								for ( int k = 1; k < len; k++ ) { 
-									// Repeat the pixel len times.
 									memcpy( dst+(k*4*PixelPerRLEUnit), dst,	4*PixelPerRLEUnit);
 								}
 								dst += len*4*PixelPerRLEUnit;
@@ -794,7 +711,6 @@ UnpackBits( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, MacRect* bounds, W
 							else {
 								expandBuf8( io, handle, 1, pixelSize, dst );
 								for ( int k = 1; k < len; k++ ) { 
-									// Repeat the expanded byte len times.
 									memcpy( dst+(k*PixelPerRLEUnit), dst, PixelPerRLEUnit);
 								}
 								dst += len*PixelPerRLEUnit;
@@ -823,7 +739,6 @@ UnpackBits( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, MacRect* bounds, W
 
 static void 
 DecodeOp9a( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, MacpixMap* pixMap ) {
-	// Do the actual unpacking.
 	switch ( pixMap->pixelSize ) {
 		case 32:
 			Unpack32Bits( io, handle, dib, &pixMap->Bounds, 0, pixMap->cmpCount );
@@ -861,8 +776,7 @@ DecodeBitmap( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, BOOL isRegion, M
 
 static void 
 DecodePixmap( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, BOOL isRegion, MacpixMap* pixMap, WORD rowBytes ) {
-	// Read mac colour table into windows palette.
-	WORD numColors;    // Palette size.
+	WORD numColors;
 	RGBQUAD ct[256];
 	
 	ReadColorTable( io, handle, &numColors, ct );
@@ -879,7 +793,6 @@ DecodePixmap( FreeImageIO *io, fi_handle handle, FIBITMAP* dib, BOOL isRegion, M
 		}
 	}
 	
-	// Ignore source & destination rectangle as well as transfer mode.
 	MacRect tempRect;
 	ReadRect( io, handle, &tempRect );
 	ReadRect( io, handle, &tempRect );
@@ -932,10 +845,6 @@ Validate(FreeImageIO *io, fi_handle handle) {
 		BYTE signature[6];
 
 		if(io->read_proc(signature, 1, sizeof(pict_signature), handle)) {
-			// v1.0 files have 0x11 (version operator) followed by 0x01 (version number)
-			// v2.0 files have 0x0011 (version operator) followed by 0x02ff (version number)
-			//   and additionally 0x0c00 as a header opcode
-			// Currently, we are only supporting v2.0
 			return (memcmp(pict_signature, signature, sizeof(pict_signature)) == 0);
 		} else {
 			return FALSE;
@@ -960,23 +869,15 @@ SupportsICCProfiles() {
 	return FALSE;
 }
 
-/**
-This plugin decodes macintosh PICT files with 1,2,4,8,16 and 32 bits per pixel as well as PICT/JPEG. 
-If an alpha channel is present in a 32-bit-PICT, it is decoded as well. 
-The PICT format is a general picture file format and can contain a lot of other elements besides bitmaps. 
-These elements are ignored.	
-*/
 static FIBITMAP * DLL_CALLCONV
 Load(FreeImageIO *io, fi_handle handle, int page, int flags, void *data) {
 	char outputMessage[ outputMessageSize ] = "";
 	FIBITMAP* dib = NULL;
 	try {		
-		// Skip empty 512 byte header.
 		if ( !io->seek_proc(handle, 512, SEEK_CUR) == 0 )
 			return NULL;
 		
-		// Read PICT header
-		Read16( io, handle ); // Skip version 1 picture size
+		Read16( io, handle );
 		
 		MacRect frame;
 		ReadRect( io, handle, &frame );
@@ -997,8 +898,8 @@ Load(FreeImageIO *io, fi_handle handle, int page, int flags, void *data) {
 		
 		MacRect bounds;
 		MacpixMap pixMap;
-		int hRes = 0x480000; // in pixels/inch (72 by default == 0x480000 in fixed point)
-		int vRes = 0x480000; // in pixels/inch (72 by default == 0x480000 in fixed point)
+		int hRes = 0x480000;
+		int vRes = 0x480000;
 		WORD rowBytes = 0;
 		BOOL isRegion = FALSE;
 		BOOL done = FALSE;
@@ -1177,11 +1078,6 @@ Load(FreeImageIO *io, fi_handle handle, int page, int flags, void *data) {
 				
 				// skip to JPEG header.
 				while ( !found && i < opLen ) {
-//					io->seek_proc( handle, 24, SEEK_CUR );
-//					MacRect dummy;
-//					ReadRect( io, handle, &dummy );
-//					io->seek_proc( handle, 122, SEEK_CUR );
-//					found = TRUE;
 					BYTE data[ 2 ];
 					if( io->read_proc( data, 2, 1, handle ) ) {
 						io->seek_proc( handle, -2, SEEK_CUR );
@@ -1226,7 +1122,6 @@ Load(FreeImageIO *io, fi_handle handle, int page, int flags, void *data) {
 			}
 
 			if(currentPos == io->tell_proc(handle)) {
-				// we probaly reached the end of file as we can no longer move forward ... 
 				throw "Invalid PICT file";
 			}
 		}
@@ -1295,8 +1190,6 @@ Load(FreeImageIO *io, fi_handle handle, int page, int flags, void *data) {
 		}		
 		
 		if ( dib ) {
-			// need to convert resolution figures from fixed point, pixels/inch
-			// to floating point, pixels/meter.			
 			float hres_ppm = hRes * ((float)39.4 / (float)65536.0);
 			float vres_ppm = vRes * ((float)39.4 / (float)65536.0);		
 			
@@ -1308,7 +1201,6 @@ Load(FreeImageIO *io, fi_handle handle, int page, int flags, void *data) {
 					DecodeOp9a( io, handle, dib, &pixMap );
 					break;
 				case jpeg:
-					// Already decoded if the embedded format was valid.
 					break;
 				case pixmap:
 					DecodePixmap( io, handle, dib, isRegion, &pixMap, rowBytes );
