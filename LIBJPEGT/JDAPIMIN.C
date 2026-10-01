@@ -78,7 +78,9 @@ jpeg_CreateDecompress(j_decompress_ptr cinfo, int version, size_t structsize)
   memset(cinfo->master, 0, sizeof(my_decomp_master));
 #ifdef WITH_SIMD
   cinfo->master->simd_support = JSIMD_UNDEFINED;
+#ifndef WITH_SIMDE
   cinfo->master->simd_huffman = 1;
+#endif
 #endif
 }
 

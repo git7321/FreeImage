@@ -263,7 +263,7 @@ alloc_sarray(j_common_ptr cinfo, int pool_id, JDIMENSION samplesperrow,
   if ((ALIGN_SIZE % sample_size) != 0)
     out_of_memory(cinfo, 5);
 
-  if (samplesperrow > MAX_ALLOC_CHUNK) {
+  if (samplesperrow == 0 || samplesperrow > MAX_ALLOC_CHUNK) {
     out_of_memory(cinfo, 9);
   }
   samplesperrow = (JDIMENSION)round_up_pow2(samplesperrow, (2 * ALIGN_SIZE) /
@@ -346,7 +346,7 @@ alloc_barray(j_common_ptr cinfo, int pool_id, JDIMENSION blocksperrow,
   JDIMENSION rowsperchunk, currow, i;
   long ltemp;
 
-  if ((sizeof(JBLOCK) % ALIGN_SIZE) != 0)
+  if (blocksperrow == 0 || (sizeof(JBLOCK) % ALIGN_SIZE) != 0)
     out_of_memory(cinfo, 6);
 
   ltemp = (MAX_ALLOC_CHUNK - sizeof(large_pool_hdr)) /

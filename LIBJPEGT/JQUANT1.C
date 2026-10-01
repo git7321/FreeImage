@@ -545,7 +545,7 @@ _jinit_1pass_quantizer(j_decompress_ptr cinfo)
   if (cinfo->data_precision != BITS_IN_JSAMPLE)
     ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
 
-  if (cinfo->master->lossless)
+  if (cinfo->out_color_space == JCS_RGB565 || cinfo->master->lossless)
     ERREXIT(cinfo, JERR_NOTIMPL);
 
   cquantize = (my_cquantize_ptr)
