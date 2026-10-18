@@ -22,7 +22,7 @@ it under the terms of the one of two licenses as you choose:
 #include <vector>
 #include "libraw_cxx_defs.h"
 
-struct BitPump // generic bit source
+struct BitPump
 {
   virtual uint32_t peek(uint32_t num) = 0;
   virtual void consume(uint32_t num) = 0;
@@ -36,7 +36,7 @@ struct BitPump // generic bit source
   }
 };
 
-struct ByteStreamBE // Jpeg is always big endian
+struct ByteStreamBE
 {
   uint8_t *buffer;
   unsigned size, pos;
@@ -131,7 +131,6 @@ struct BitPumpJpeg : public BitPump
 	BitPumpJpeg(ByteStreamBE& s): buffer(s.buffer+s.pos),size(s.size-s.pos),pos(0),bits(0),nbits(0),finished(false){}
 };
 
-
 const uint32_t LIBRAW_DECODE_CACHE_BITS = 13;
 const uint64_t LIBRAW_CACHE_PRESENT_FLAG = 0x100000000L;
 
@@ -143,7 +142,7 @@ struct HuffTable
 	bool dng_bug;
 	bool disable_cache;
 	uint32_t nbits;
-    std::vector<uint32_t> hufftable; // len:8 << 16| huffval:8  << 8 | shift:8
+    std::vector<uint32_t> hufftable;
 	std::vector<uint64_t> decodecache;
 	bool initialized;
 	HuffTable();
@@ -175,7 +174,7 @@ struct HuffTable
       return _diff;
     }
 
-    int32_t decode_slow2(BitPump & pump, uint32_t& outlen) // output:  (len+shift):8, code:16
+    int32_t decode_slow2(BitPump & pump, uint32_t& outlen)
     {
       uint32_t _len = len(pump);
       int32_t _diff = diff(pump, _len);
@@ -185,7 +184,7 @@ struct HuffTable
       return _diff;
     }
 
-    uint32_t len(BitPump & pump) //bits:8, len:8, shift:8
+    uint32_t len(BitPump & pump)
     {
       uint32_t code = pump.peek(nbits);
       uint32_t huffdata = hufftable[code];
@@ -194,7 +193,7 @@ struct HuffTable
       return huffdata;
     }
 
-    int32_t diff(BitPump & pump, uint32_t hentry) // input: bits:8, len:8, shift:8; output:  diff:i32
+    int32_t diff(BitPump & pump, uint32_t hentry)
     {
       uint32_t len = (hentry >> 8) & 0xff;
       if (len == 0)
@@ -237,8 +236,8 @@ struct LibRaw_SOFInfo
 	std::vector<LibRaw_JpegComponentInfo> components;
 	bool csfix;
 	LibRaw_SOFInfo(): width(0),height(0),cps(0),precision(0),csfix(false){}
-	bool parse_sof(ByteStreamBE&); // true => OK, false => not OK
-	uint32_t parse_sos(ByteStreamBE&); // returns (predictor << 8 | point transform); if above 0xffff => error
+	bool parse_sof(ByteStreamBE&);
+	uint32_t parse_sos(ByteStreamBE&);
 };
 
 struct LibRaw_LjpegDecompressor 
@@ -252,7 +251,7 @@ struct LibRaw_LjpegDecompressor
 	LibRaw_LjpegDecompressor(uint8_t *b, unsigned bs, bool dngbug, bool csfix);
 	void  initialize(bool dngbug, bool csfix);
     uint8_t next_marker(bool allowskip);
-	bool  parse_dht(bool init[4], uint32_t dht_bits[4][17], uint32_t dht_huffval[4][256]); // return true on OK;
+	bool  parse_dht(bool init[4], uint32_t dht_bits[4][17], uint32_t dht_huffval[4][256]);
 	bool decode_ljpeg_422(std::vector<uint16_t> &dest, int width, int height);
 
 	struct State {
@@ -273,15 +272,14 @@ struct LibRaw_LjpegDecompressor
 	struct Marker {
 		enum Markers {
 			Stuff = 0x00,
-			SOF3 = 0xc3, // lossless
-			DHT = 0xc4,  // huffman tables
-			SOI = 0xd8,  // start of image
-			EOI = 0xd9,  // end of image
-			SOS = 0xda,  // start of scan
-			DQT = 0xdb,  // quantization tables
+			SOF3 = 0xc3,
+			DHT = 0xc4,
+			SOI = 0xd8,
+			EOI = 0xd9,
+			SOS = 0xda,
+			DQT = 0xdb,
 			Fill = 0xff,
 		};
 	};
 	enum State::States state;
 };
-

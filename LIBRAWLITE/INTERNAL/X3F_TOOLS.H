@@ -57,8 +57,6 @@ BSD-style License
 #include <stdio.h>
 #include "../libraw/libraw_datastream.h"
 
-/* From X3F_IO.H */
-
 #define SIZE_UNIQUE_IDENTIFIER 16
 #define SIZE_WHITE_BALANCE 32
 #define SIZE_COLOR_MODE 32
@@ -74,33 +72,26 @@ BSD-style License
 #define X3F_VERSION_3_0 X3F_VERSION(3, 0)
 #define X3F_VERSION_4_0 X3F_VERSION(4, 0)
 
-/* Main file identifier */
 #define X3F_FOVb (uint32_t)(0x62564f46)
-/* Directory identifier */
 #define X3F_SECd (uint32_t)(0x64434553)
-/* Property section identifiers */
 #define X3F_PROP (uint32_t)(0x504f5250)
 #define X3F_SECp (uint32_t)(0x70434553)
-/* Image section identifiers */
 #define X3F_IMAG (uint32_t)(0x46414d49)
 #define X3F_IMA2 (uint32_t)(0x32414d49)
 #define X3F_SECi (uint32_t)(0x69434553)
-/* CAMF section identifiers */
 #define X3F_CAMF (uint32_t)(0x464d4143)
 #define X3F_SECc (uint32_t)(0x63434553)
-/* CAMF entry identifiers */
 #define X3F_CMbP (uint32_t)(0x50624d43)
 #define X3F_CMbT (uint32_t)(0x54624d43)
 #define X3F_CMbM (uint32_t)(0x4d624d43)
 #define X3F_CMb (uint32_t)(0x00624d43)
-/* SDQ section identifiers ? - TODO */
 #define X3F_SPPA (uint32_t)(0x41505053)
 #define X3F_SECs (uint32_t)(0x73434553)
 
 #define X3F_IMAGE_THUMB_PLAIN (uint32_t)(0x00020003)
 #define X3F_IMAGE_THUMB_HUFFMAN (uint32_t)(0x0002000b)
 #define X3F_IMAGE_THUMB_JPEG (uint32_t)(0x00020012)
-#define X3F_IMAGE_THUMB_SDQ (uint32_t)(0x00020019) /* SDQ ? - TODO */
+#define X3F_IMAGE_THUMB_SDQ (uint32_t)(0x00020019)
 
 #define X3F_IMAGE_RAW_HUFFMAN_X530 (uint32_t)(0x00030005)
 #define X3F_IMAGE_RAW_HUFFMAN_10BIT (uint32_t)(0x00030006)
@@ -116,7 +107,6 @@ BSD-style License
 #define X3F_PROPERTY_LIST_HEADER_SIZE 24
 
 typedef uint16_t utf16_t;
-
 typedef int bool_t;
 
 typedef enum x3f_extended_types_e
@@ -136,13 +126,11 @@ typedef enum x3f_extended_types_e
 
 typedef struct x3f_property_s
 {
-  /* Read from file */
   uint32_t name_offset;
   uint32_t value_offset;
 
-  /* Computed */
-  utf16_t *name;  /* 0x0000 terminated UTF 16 */
-  utf16_t *value; /* 0x0000 terminated UTF 16 */
+  utf16_t *name;
+  utf16_t *value;
 } x3f_property_t;
 
 typedef struct x3f_property_table_s
@@ -153,7 +141,6 @@ typedef struct x3f_property_table_s
 
 typedef struct x3f_property_list_s
 {
-  /* 2.0 Fields */
   uint32_t num_properties;
   uint32_t character_format;
   uint32_t reserved;
@@ -187,8 +174,8 @@ typedef struct x3f_table32_s
 
 typedef struct
 {
-  uint8_t *data; /* Pointer to actual image data */
-  void *buf;     /* Pointer to allocated buffer for free() */
+  uint8_t *data;
+  void *buf;
   uint32_t rows;
   uint32_t columns;
   uint32_t channels;
@@ -197,8 +184,8 @@ typedef struct
 
 typedef struct
 {
-  uint16_t *data; /* Pointer to actual image data */
-  void *buf;      /* Pointer to allocated buffer for free() */
+  uint16_t *data;
+  void *buf;
   uint32_t rows;
   uint32_t columns;
   uint32_t channels;
@@ -215,9 +202,9 @@ typedef struct x3f_huffnode_s
 
 typedef struct x3f_hufftree_s
 {
-  uint32_t free_node_index; /* Free node index in huffman tree array */
+  uint32_t free_node_index;
   uint32_t total_node_index;
-  x3f_huffnode_t *nodes;    /* Coding tree */
+  x3f_huffnode_t *nodes;
 } x3f_hufftree_t;
 
 typedef struct x3f_true_huffman_element_s
@@ -232,21 +219,18 @@ typedef struct x3f_true_huffman_s
   x3f_true_huffman_element_t *element;
 } x3f_true_huffman_t;
 
-/* 0=bottom, 1=middle, 2=top */
 #define TRUE_PLANES 3
 
 typedef struct x3f_true_s
 {
-  uint16_t seed[TRUE_PLANES]; /* Always 512,512,512 */
-  uint16_t unknown;           /* Always 0 */
-  x3f_true_huffman_t table;   /* Huffman table - zero
-                     terminated. size is the number of
-                     leaves plus 1.*/
+  uint16_t seed[TRUE_PLANES];
+  uint16_t unknown;
+  x3f_true_huffman_t table;
 
-  x3f_table32_t plane_size;            /* Size of the 3 planes */
-  uint8_t *plane_address[TRUE_PLANES]; /* computed offset to the planes */
-  x3f_hufftree_t tree;                 /* Coding tree */
-  x3f_area16_t x3rgb16;                /* 3x16 bit X3-RGB data */
+  x3f_table32_t plane_size;
+  uint8_t *plane_address[TRUE_PLANES];
+  x3f_hufftree_t tree;
+  x3f_area16_t x3rgb16;
 } x3f_true_t;
 
 typedef struct x3f_quattro_s
@@ -274,10 +258,6 @@ typedef struct x3f_huffman_s
 
 typedef struct x3f_image_data_s
 {
-  /* 2.0 Fields */
-  /* ------------------------------------------------------------------ */
-  /* Known combinations of type and format are:
-     1-6, 2-3, 2-11, 2-18, 3-6 */
   uint32_t type;        /* 1 = RAW X3 (SD1)
                            2 = thumbnail or maybe just RGB
                            3 = RAW X3 */
@@ -286,7 +266,6 @@ typedef struct x3f_image_data_s
                            11 = 3x8 bit huffman
                            18 = JPEG */
   uint32_t type_format; /* type<<16 + format */
-  /* ------------------------------------------------------------------ */
 
   uint32_t columns;    /* width / row size in pixels */
   uint32_t rows;       /* height */
@@ -308,7 +287,7 @@ typedef struct camf_dim_entry_s
 {
   uint32_t size;
   uint32_t name_offset;
-  uint32_t n; /* 0,1,2,3... */
+  uint32_t n;
   char *name;
 } camf_dim_entry_t;
 
@@ -405,7 +384,6 @@ typedef struct x3f_camf_type5_s
 
 typedef struct x3f_camf_s
 {
-
   /* Header info */
   uint32_t type;
   union {
@@ -491,7 +469,7 @@ typedef struct x3f_info_s
   char *error;
   struct
   {
-    LibRaw_abstract_datastream *file; /* Use if more data is needed */
+    LibRaw_abstract_datastream *file;
   } input, output;
 } x3f_info_t;
 
@@ -537,6 +515,6 @@ x3f_directory_entry_t *x3f_get_thumb_huffman(x3f_t *x3f);
 x3f_directory_entry_t *x3f_get_thumb_jpeg(x3f_t *x3f);
 x3f_directory_entry_t *x3f_get_camf(x3f_t *x3f);
 x3f_directory_entry_t *x3f_get_prop(x3f_t *x3f);
-/* extern */ int32_t x3f_load_data_size(x3f_t *x3f, x3f_directory_entry_t *DE);
+int32_t x3f_load_data_size(x3f_t *x3f, x3f_directory_entry_t *DE);
 
 #endif

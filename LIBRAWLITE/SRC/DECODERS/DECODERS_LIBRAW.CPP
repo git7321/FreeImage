@@ -777,7 +777,7 @@ void decode_S_type(int32_t out_width, uint32_t *img_input, ushort *outbuf, size_
 
 	int32_t prev_pix_value[2] = { 0, 0 };
 
-	uint8_t init_bits = stream.get(16) & 7;
+	uint8_t init_bits = (uint8_t)(stream.get(16) & 7);
 
 	if (out_width - 7 > 0)
 	{

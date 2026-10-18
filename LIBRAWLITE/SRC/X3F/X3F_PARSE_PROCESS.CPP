@@ -50,7 +50,7 @@ BSD-style License
 #undef DS
 #endif
 #ifdef ID
-#undef ID /* used in x3f utils */
+#undef ID
 #endif
 
 #include "../../internal/x3f_tools.h"
@@ -81,19 +81,15 @@ static void *lr_memmem(const void *l, size_t l_len, const void *s, size_t s_len)
   const char *cl = (const char *)l;
   const char *cs = (const char *)s;
 
-  /* we need something to compare */
   if (l_len == 0 || s_len == 0)
     return NULL;
 
-  /* "s" must be smaller or equal to "l" */
   if (l_len < s_len)
     return NULL;
 
-  /* special case where s_len == 1 */
   if (s_len == 1)
     return (void *)memchr(l, (int)*cs, l_len);
 
-  /* the last position where its possible to find "s" in "l" */
   last = (char *)cl + l_len - s_len;
 
   for (cur = (char *)cl; cur <= last; cur++)
@@ -112,7 +108,6 @@ void LibRaw::parse_x3f()
   x3f_header_t *H = NULL;
 
   H = &x3f->header;
-  // Parse RAW size from RAW section
   x3f_directory_entry_t *DE = x3f_get_raw(x3f);
   if (!DE)
     return;
@@ -121,12 +116,10 @@ void LibRaw::parse_x3f()
   x3f_image_data_t *ID = &DEH->data_subsection.image_data;
   imgdata.sizes.raw_width = ID->columns;
   imgdata.sizes.raw_height = ID->rows;
-  // Parse other params from property section
 
   DE = x3f_get_prop(x3f);
   if ((x3f_load_data(x3f, DE) == X3F_OK))
   {
-    // Parse property list
     DEH = &DE->header;
     x3f_property_list_t *PL = &DEH->data_subsection.property_list;
     utf16_t *datap = (utf16_t *)PL->data;
@@ -150,13 +143,13 @@ void LibRaw::parse_x3f()
         if (!strcmp(name, "ISO"))
           imgdata.other.iso_speed = float(atoi(value));
         if (!strcmp(name, "CAMMANUF"))
-          strcpy(imgdata.idata.make, value);
+          strncpy(imgdata.idata.make, value, sizeof(imgdata.idata.make)-1);
         if (!strcmp(name, "CAMMODEL"))
-          strcpy(imgdata.idata.model, value);
+          strncpy(imgdata.idata.model, value, sizeof(imgdata.idata.model) - 1);
         if (!strcmp(name, "CAMSERIAL"))
-          strcpy(imgdata.shootinginfo.BodySerial, value);
+          strncpy(imgdata.shootinginfo.BodySerial, value, sizeof(imgdata.shootinginfo.BodySerial) - 1);
         if (!strcmp(name, "WB_DESC"))
-          strcpy(imgdata.color.model2, value);
+          strncpy(imgdata.color.model2, value, sizeof(imgdata.color.model2) - 1);
         if (!strcmp(name, "TIME"))
           imgdata.other.timestamp = atoi(value);
         if (!strcmp(name, "SHUTTER"))
@@ -202,7 +195,7 @@ void LibRaw::parse_x3f()
         {
           char *sp;
           imgdata.lens.makernotes.LensID =
-              strtol(value, &sp, 16); // atoi(value);
+              strtol(value, &sp, 16);
           if (imgdata.lens.makernotes.LensID)
             imgdata.lens.makernotes.LensMount = Sigma_X3F;
         }
@@ -212,17 +205,13 @@ void LibRaw::parse_x3f()
       imgdata.sizes.raw_pitch = imgdata.sizes.raw_width * 6;
       imgdata.idata.is_foveon = 1;
       libraw_internal_data.internal_output_params.raw_color =
-          1;                          // Force adobe coeff
-      imgdata.color.maximum = 0x3fff; // To be reset by color table
+          1;
+      imgdata.color.maximum = 0x3fff;
       libraw_internal_data.unpacker_data.order = 0x4949;
     }
   }
   else
   {
-    // No property list
-     // sd Quattro H: 6656x4480, 3328x2240, 5504x3680, 2752x1840
-    // dpN Quattro:  5888x3672, 2944x1836
-    // sd Quattro:   5888x3776, 2944x1888
     if ((imgdata.sizes.raw_width == 5888) || // Quattro: dp0, dp1, dp2, sd
         (imgdata.sizes.raw_width == 2944) || // Quattro: dp0, dp1, dp2, sd
         (imgdata.sizes.raw_width == 6656) || // sd Quattro H
@@ -235,11 +224,9 @@ void LibRaw::parse_x3f()
       imgdata.sizes.raw_pitch = imgdata.sizes.raw_width * 6;
       imgdata.idata.is_foveon = 1;
       libraw_internal_data.internal_output_params.raw_color =
-          1; // Force adobe coeff
+          1;
       libraw_internal_data.unpacker_data.order = 0x4949;
       strcpy(imgdata.idata.make, "SIGMA");
-#if 1
-      // Try to find model number in first 2048 bytes;
       INT64 pos = libraw_internal_data.internal_data.input->tell();
       libraw_internal_data.internal_data.input->seek(0, SEEK_SET);
       unsigned char buf[2048];
@@ -263,7 +250,6 @@ void LibRaw::parse_x3f()
             snprintf(imgdata.idata.model, 64, "%s", fndsd);
     }
       else
-#endif
         if ((imgdata.sizes.raw_width == 6656) ||
             (imgdata.sizes.raw_width == 3328) ||
             (imgdata.sizes.raw_width == 5504) ||
@@ -272,12 +258,10 @@ void LibRaw::parse_x3f()
         else if ((imgdata.sizes.raw_height == 3776) ||
                  (imgdata.sizes.raw_height == 1888))
             strcpy(imgdata.idata.model, "sd Quattro");
-        else // defaulting to dp2 Quattro
+        else
             strcpy(imgdata.idata.model, "dp2 Quattro");
     }
-    // else
   }
-  // Try to get thumbnail data
   LibRaw_thumbnail_formats format = LIBRAW_THUMBNAIL_UNKNOWN;
   if ((DE = x3f_get_thumb_jpeg(x3f)))
   {
@@ -312,7 +296,7 @@ int LibRaw::x3f_thumb_size()
   {
     x3f_t *x3f = (x3f_t *)_x3f_data;
     if (!x3f)
-      return -1; // No data pointer set
+      return -1;
     x3f_directory_entry_t *DE = x3f_get_thumb_jpeg(x3f);
     if (!DE)
       DE = x3f_get_thumb_plain(x3f);
@@ -333,10 +317,10 @@ void LibRaw::x3f_thumb_loader()
 {
   try
   {
-    INT64 checked_size = x3f_thumb_size(); // This value was checked at upper level?
+    INT64 checked_size = x3f_thumb_size();
     x3f_t *x3f = (x3f_t *)_x3f_data;
     if (!x3f)
-      return; // No data pointer set
+      return;
     x3f_directory_entry_t *DE = x3f_get_thumb_jpeg(x3f);
     if (!DE)
       DE = x3f_get_thumb_plain(x3f);
@@ -375,7 +359,7 @@ void LibRaw::x3f_thumb_loader()
       for (int row = 0; row < (int)ID->rows; row++)
       {
         int offset = row * ID->row_stride;
-        if (offset + ID->columns * 3 > ID->data_size)
+        if (offset + ID->columns * 3 > ID->data_size || offset < 0)
           break;
         char *dest = &imgdata.thumbnail.thumb[row * ID->columns * 3];
         char *src = &src0[offset];
@@ -385,7 +369,6 @@ void LibRaw::x3f_thumb_loader()
   }
   catch (...)
   {
-    // no rethrow: handled at upper level
     imgdata.thumbnail.twidth = 0;
     imgdata.thumbnail.theight = 0;
     imgdata.thumbnail.tcolors = 0;
@@ -403,9 +386,9 @@ void LibRaw::x3f_dpq_interpolate_rg()
     for (int y = 2; y < (h - 2); y++)
     {
       uint16_t *row0 =
-          &image[imgdata.sizes.raw_width * 3 * (y * 2) + color]; // dst[1]
+          &image[imgdata.sizes.raw_width * 3 * (y * 2) + color];
       uint16_t *row1 =
-          &image[imgdata.sizes.raw_width * 3 * (y * 2 + 1) + color]; // dst1[1]
+          &image[imgdata.sizes.raw_width * 3 * (y * 2 + 1) + color];
       for (int x = 2; x < (w - 2); x++)
       {
         row1[0] = row1[3] = row0[3] = row0[0];
@@ -437,11 +420,11 @@ void LibRaw::x3f_dpq_interpolate_af(int xstep, int ystep, int scale)
       continue;
     if (y > imgdata.rawdata.sizes.raw_height - scale)
       break;
-    uint16_t *row0 = &image[imgdata.sizes.raw_width * 3 * y]; // Наша строка
+    uint16_t *row0 = &image[imgdata.sizes.raw_width * 3 * y];
     uint16_t *row_minus =
-        &image[imgdata.sizes.raw_width * 3 * (y - scale)]; // Строка выше
+        &image[imgdata.sizes.raw_width * 3 * (y - scale)];
     uint16_t *row_plus =
-        &image[imgdata.sizes.raw_width * 3 * (y + scale)]; // Строка ниже
+        &image[imgdata.sizes.raw_width * 3 * (y + scale)];
     for (int x = 0;
          x < imgdata.rawdata.sizes.width + imgdata.rawdata.sizes.left_margin;
          x += xstep)
@@ -503,8 +486,6 @@ void LibRaw::x3f_dpq_interpolate_af(int xstep, int ystep, int scale)
              ((pixel0[1] - imgdata.color.black) * 3.75 + imgdata.color.black)) /
                 2,
             16383));
-        // pixel0[1] = float(pixf[1]-imgdata.color.black)*multip +
-        // imgdata.color.black;
       }
     }
   }
@@ -519,20 +500,20 @@ void LibRaw::x3f_dpq_interpolate_af_sd(int xstart, int ystart, int xend,
                                            imgdata.rawdata.sizes.top_margin;
        y += ystep)
   {
-    uint16_t *row0 = &image[imgdata.sizes.raw_width * 3 * y]; // Наша строка
+    uint16_t *row0 = &image[imgdata.sizes.raw_width * 3 * y];
     uint16_t *row1 =
-        &image[imgdata.sizes.raw_width * 3 * (y + 1)]; // Следующая строка
+        &image[imgdata.sizes.raw_width * 3 * (y + 1)];
     uint16_t *row_minus =
-        &image[imgdata.sizes.raw_width * 3 * (y - scale)]; // Строка выше
+        &image[imgdata.sizes.raw_width * 3 * (y - scale)];
     uint16_t *row_plus =
         &image[imgdata.sizes.raw_width * 3 *
-               (y + scale)]; // Строка ниже AF-point (scale=2 -> ниже row1
+               (y + scale)];
     uint16_t *row_minus1 = &image[imgdata.sizes.raw_width * 3 * (y - 1)];
     for (int x = xstart; x < xend && x < imgdata.rawdata.sizes.width +
                                              imgdata.rawdata.sizes.left_margin;
          x += xstep)
     {
-      uint16_t *pixel00 = &row0[x * 3]; // Current pixel
+      uint16_t *pixel00 = &row0[x * 3];
       float sumR = 0.f, sumG = 0.f;
       float cnt = 0.f;
       for (int xx = -scale; xx <= scale; xx += scale)
@@ -554,8 +535,8 @@ void LibRaw::x3f_dpq_interpolate_af_sd(int xstart, int ystart, int xend,
 
       if (scale == 2)
       {
-        uint16_t *pixel0B = &row0[x * 3 + 3]; // right pixel
-        uint16_t *pixel1B = &row1[x * 3 + 3]; // right pixel
+        uint16_t *pixel0B = &row0[x * 3 + 3];
+        uint16_t *pixel1B = &row1[x * 3 + 3];
         float sumG0 = 0, sumG1 = 0.f;
         float _cnt = 0.f;
         for (int xx = -scale; xx <= scale; xx += scale)
@@ -576,20 +557,16 @@ void LibRaw::x3f_dpq_interpolate_af_sd(int xstart, int ystart, int xend,
           pixel1B[2] = uint16_t(sumG1 / _cnt);
         }
       }
-
-      //			uint16_t* pixel10 = &row1[x*3]; // Pixel below current
-      //			uint16_t* pixel_bottom = &row_plus[x*3];
     }
   }
 }
 
 void LibRaw::x3f_load_raw()
 {
-  // already in try/catch
   int raise_error = 0;
   x3f_t *x3f = (x3f_t *)_x3f_data;
   if (!x3f)
-    return; // No data pointer set
+    return;
   if (X3F_OK == x3f_load_data(x3f, x3f_get_raw(x3f)))
   {
     x3f_directory_entry_t *DE = x3f_get_raw(x3f);
@@ -616,13 +593,12 @@ void LibRaw::x3f_load_raw()
       goto end;
     }
 
-    size_t datasize = S.raw_height * S.raw_width * 3 * sizeof(unsigned short);
+    INT64 datasize = INT64(S.raw_height) * INT64(S.raw_width) * 3I64 * sizeof(unsigned short);
     S.raw_pitch = S.raw_width * 3 * sizeof(unsigned short);
-    if (!(imgdata.rawdata.raw_alloc = malloc(datasize)))
+    if (!(imgdata.rawdata.raw_alloc = malloc((size_t)datasize)))
       throw LIBRAW_EXCEPTION_ALLOC;
 
     imgdata.rawdata.color3_image = (ushort(*)[3])imgdata.rawdata.raw_alloc;
-    // swap R/B channels for known old cameras
     if (!strcasecmp(P1.make, "Polaroid") && !strcasecmp(P1.model, "x530"))
     {
       ushort(*src)[3] = (ushort(*)[3])data;
@@ -634,13 +610,11 @@ void LibRaw::x3f_load_raw()
       }
     }
     else if (HUF)
-      memmove(imgdata.rawdata.raw_alloc, data, datasize);
+      memmove(imgdata.rawdata.raw_alloc, data, (size_t)datasize);
     else if (TRU && (!Q || !Q->quattro_layout))
-      memmove(imgdata.rawdata.raw_alloc, data, datasize);
+      memmove(imgdata.rawdata.raw_alloc, data, (size_t)datasize);
     else if (TRU && Q)
     {
-      // Move quattro data in place
-      // R/B plane
       for (int prow = 0; prow < (int)TRU->x3rgb16.rows && prow < S.raw_height / 2;
            prow++)
       {
@@ -670,58 +644,56 @@ void LibRaw::x3f_load_raw()
       }
     }
 
-#if 1
     if (TRU && Q &&
         !(imgdata.rawparams.specials & LIBRAW_RAWSPECIAL_NODP2Q_INTERPOLATEAF))
     {
       if (imgdata.sizes.raw_width == 5888 &&
-          imgdata.sizes.raw_height == 3672) // dpN Quattro normal
+          imgdata.sizes.raw_height == 3672)
       {
         x3f_dpq_interpolate_af(32, 8, 2);
       }
       else if (imgdata.sizes.raw_width == 5888 &&
-               imgdata.sizes.raw_height == 3776) // sd Quattro normal raw
+               imgdata.sizes.raw_height == 3776)
       {
         x3f_dpq_interpolate_af_sd(216, 464, imgdata.sizes.raw_width - 1, 3312,
                                   16, 32, 2);
       }
       else if (imgdata.sizes.raw_width == 6656 &&
-               imgdata.sizes.raw_height == 4480) // sd Quattro H normal raw
+               imgdata.sizes.raw_height == 4480)
       {
         x3f_dpq_interpolate_af_sd(232, 592, imgdata.sizes.raw_width - 1, 3920,
                                   16, 32, 2);
       }
       else if (imgdata.sizes.raw_width == 3328 &&
-               imgdata.sizes.raw_height == 2240) // sd Quattro H half size
+               imgdata.sizes.raw_height == 2240)
       {
         x3f_dpq_interpolate_af_sd(116, 296, imgdata.sizes.raw_width - 1, 2200,
                                   8, 16, 1);
       }
       else if (imgdata.sizes.raw_width == 5504 &&
-               imgdata.sizes.raw_height == 3680) // sd Quattro H APS-C raw
+               imgdata.sizes.raw_height == 3680)
       {
         x3f_dpq_interpolate_af_sd(8, 192, imgdata.sizes.raw_width - 1, 3185, 16,
                                   32, 2);
       }
       else if (imgdata.sizes.raw_width == 2752 &&
-               imgdata.sizes.raw_height == 1840) // sd Quattro H APS-C half size
+               imgdata.sizes.raw_height == 1840)
       {
         x3f_dpq_interpolate_af_sd(4, 96, imgdata.sizes.raw_width - 1, 1800, 8,
                                   16, 1);
       }
       else if (imgdata.sizes.raw_width == 2944 &&
-               imgdata.sizes.raw_height == 1836) // dpN Quattro small raw
+               imgdata.sizes.raw_height == 1836)
       {
         x3f_dpq_interpolate_af(16, 4, 1);
       }
       else if (imgdata.sizes.raw_width == 2944 &&
-               imgdata.sizes.raw_height == 1888) // sd Quattro small
+               imgdata.sizes.raw_height == 1888)
       {
         x3f_dpq_interpolate_af_sd(108, 232, imgdata.sizes.raw_width - 1, 1656,
                                   8, 16, 1);
       }
     }
-#endif
     if (TRU && Q && Q->quattro_layout &&
         !(imgdata.rawparams.specials & LIBRAW_RAWSPECIAL_NODP2Q_INTERPOLATERG))
       x3f_dpq_interpolate_rg();

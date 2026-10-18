@@ -100,8 +100,11 @@ void LibRaw::tiff_head(struct tiff_hdr *th, int full)
     tiff_set(th, &th->ntag, 273, 4, 1, sizeof *th + psize);
     tiff_set(th, &th->ntag, 277, 3, 1, colors);
     tiff_set(th, &th->ntag, 278, 4, 1, height);
-    tiff_set(th, &th->ntag, 279, 4, 1,
-             height * width * colors * output_bps / 8);
+	INT64 strip_bytes = INT64(height) * INT64(width) * INT64(colors) * INT64(output_bps) / 8I64;
+	if (strip_bytes >= 2147483647I64)
+		throw LIBRAW_EXCEPTION_TOOBIG;
+	int strip_bytes_32 = strip_bytes;
+	tiff_set(th, &th->ntag, 279, 4, 1, strip_bytes_32);
   }
   else
     tiff_set(th, &th->ntag, 274, 3, 1, "12435867"[flip] - '0');
@@ -144,7 +147,7 @@ void LibRaw::jpeg_thumb_writer(FILE *tfp, char *t_humb, int t_humb_length)
   struct tiff_hdr th;
   fputc(0xff, tfp);
   fputc(0xd8, tfp);
-  if (strcmp(t_humb + 6, "Exif"))
+  if (memcmp(t_humb + 6, "Exif\0",5))
   {
     memcpy(exif, "\xff\xe1  Exif\0\0", 10);
     exif[1] = htons(8 + sizeof th);
@@ -238,101 +241,6 @@ void LibRaw::write_ppm_tiff()
     }
     catch (...)
     {
-      throw LIBRAW_EXCEPTION_ALLOC; // rethrow
+      throw LIBRAW_EXCEPTION_ALLOC;
     }
 }
-#if 0
-void LibRaw::ppm_thumb()
-{
-    try
-    {
-        thumb_length = thumb_width * thumb_height * 3;
-        std::vector<char> thumb(thumb_length);
-        fprintf(ofp, "P6\n%d %d\n255\n", thumb_width, thumb_height);
-        fread(thumb.data(), 1, thumb_length, ifp);
-        fwrite(thumb.data(), 1, thumb_length, ofp);
-    }
-    catch (...)
-    {
-      throw LIBRAW_EXCEPTION_ALLOC; // rethrow
-    }
-}
-
-void LibRaw::ppm16_thumb()
-{
-    try
-    {
-        unsigned i;
-        thumb_length = thumb_width * thumb_height * 3;
-        std::vector<char> thumb(thumb_length * 2, 0);
-        read_shorts((ushort *)thumb.data(), thumb_length);
-        for (i = 0; i < thumb_length; i++)
-            thumb[i] = ((ushort *)thumb.data())[i] >> 8;
-        fprintf(ofp, "P6\n%d %d\n255\n", thumb_width, thumb_height);
-        fwrite(thumb.data(), 1, thumb_length, ofp);
-    }
-    catch (...)
-    {
-      throw LIBRAW_EXCEPTION_ALLOC; // rethrow
-    }
-}
-
-void LibRaw::layer_thumb()
-{
-    try
-    {
-        unsigned int i;
-        int c;
-        char map[][4] = { "012", "102" };
-
-        colors = thumb_misc >> 5 & 7;
-        thumb_length = thumb_width * thumb_height;
-        std::vector<char> thumb(colors * thumb_length, 0);
-        fprintf(ofp, "P%d\n%d %d\n255\n", 5 + (colors >> 1), thumb_width,
-            thumb_height);
-        fread(thumb.data(), thumb_length, colors, ifp);
-        for (i = 0; i < thumb_length; i++)
-            FORCC putc(thumb[i + thumb_length * (map[thumb_misc >> 8][c] - '0')], ofp);
-    }
-    catch (...)
-    {
-      throw LIBRAW_EXCEPTION_ALLOC; // rethrow
-    }
-}
-
-void LibRaw::rollei_thumb()
-{
-    try
-    {
-        unsigned i;
-        thumb_length = thumb_width * thumb_height;
-        std::vector<ushort> thumb(thumb_length, 0);
-        fprintf(ofp, "P6\n%d %d\n255\n", thumb_width, thumb_height);
-        read_shorts(thumb.data(), thumb_length);
-        for (i = 0; i < thumb_length; i++)
-        {
-            putc(thumb[i] << 3, ofp);
-            putc(thumb[i] >> 5 << 2, ofp);
-            putc(thumb[i] >> 11 << 3, ofp);
-        }
-    }
-    catch (...)
-    {
-      throw LIBRAW_EXCEPTION_ALLOC; // rethrow
-    }
-}
-
-void LibRaw::jpeg_thumb()
-{
-    try
-    {
-        std::vector<char> thumb(thumb_length);
-        fread(thumb.data(), 1, thumb_length, ifp);
-        jpeg_thumb_writer(ofp, thumb.data(), thumb_length);
-    }
-    catch (...)
-    {
-      throw LIBRAW_EXCEPTION_ALLOC; // rethrow
-    }
-}
-#endif

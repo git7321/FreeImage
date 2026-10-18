@@ -509,9 +509,14 @@ void LibRaw::convertFloatToInt(float dmin /* =4096.f */,
   else
     return;
 
-  ushort *raw_alloc = (ushort *)malloc(
-      imgdata.sizes.raw_height * imgdata.sizes.raw_width *
-      libraw_internal_data.unpacker_data.tiff_samples * sizeof(ushort));
+  INT64 pixcnt = INT64(imgdata.sizes.raw_height) * INT64(imgdata.sizes.raw_width)
+	  * INT64(libraw_internal_data.unpacker_data.tiff_samples);
+
+  if (pixcnt * sizeof(ushort) > INT64(imgdata.rawparams.max_raw_memory_mb) * 1024I64 * 1024I64)
+    throw LIBRAW_EXCEPTION_TOOBIG;
+
+  ushort *raw_alloc =
+		(ushort *)calloc(pixcnt, sizeof(ushort));
   float tmax = float(MAX(imgdata.color.maximum, 1));
   float datamax = imgdata.color.fmaximum;
 
@@ -535,9 +540,7 @@ void LibRaw::convertFloatToInt(float dmin /* =4096.f */,
   else
     imgdata.rawdata.color.fnorm = imgdata.color.fnorm = 0.f;
 
-  for (size_t i = 0; i < imgdata.sizes.raw_height * imgdata.sizes.raw_width *
-                             libraw_internal_data.unpacker_data.tiff_samples;
-       ++i)
+  for (size_t i = 0; i < pixcnt; ++i)
   {
     float val = MAX(data[i], 0.f);
     raw_alloc[i] = (ushort)(val * multip);

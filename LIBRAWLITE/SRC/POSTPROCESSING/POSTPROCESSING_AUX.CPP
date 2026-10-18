@@ -40,7 +40,7 @@ void LibRaw::wavelet_denoise()
                                 0.0291f, 0.0152f, 0.0080f, 0.0044f};
 
   if (iwidth < 65 || iheight < 65) return;
-  if (int64_t(iwidth) * int64_t(iheight) >= 0x15540000I64) return; // ensure pixel count less then 358M so total allocation size is less then 4GB
+  if (int64_t(iwidth) * int64_t(iheight) >= 0x15540000I64) return;
 
   while (maximum << scale < 0x10000)
     scale++;
@@ -53,7 +53,7 @@ void LibRaw::wavelet_denoise()
   if ((nc = colors) == 3 && filters)
     nc++;
   FORC(nc)
-  { /* denoise R,G1,B,G3 individually */
+  {
 	  for (i = 0; i < size; i++)
 		  fimg[i] = 256.f * sqrtf((float)(image[i][c] << scale));
     for (hpass = lev = 0; lev < 5; lev++)
@@ -90,7 +90,7 @@ void LibRaw::wavelet_denoise()
       image[i][c] = CLIP(SQR(fimg[i] + fimg[lpass + i]) / 0x10000);
   }
   if (filters && colors == 3)
-  { /* pull G1 and G3 closer together */
+  {
     for (row = 0; row < 2; row++)
     {
       mul[row] = 0.125f * pre_mul[FC(row + 1, 0) | 1] / pre_mul[FC(row, 0) | 1];
@@ -140,23 +140,24 @@ void LibRaw::wavelet_denoise()
   if (iwidth < 65 || iheight < 65)
     return;
   if (int64_t(iwidth) * int64_t(iheight) >= 0x15540000I64)
-    return; // ensure pixel count less then 358M so total allocation size is less then 4GB
+    return;
 
   while (maximum << scale < 0x10000)
     scale++;
   maximum <<= --scale;
   black <<= scale;
   FORC4 cblack[c] <<= scale;
+  size = iheight * iwidth;
   fimg = (float *)malloc((size * 3 + iheight + iwidth) * sizeof *fimg);
   temp = fimg + size * 3;
   if ((nc = colors) == 3 && filters)
     nc++;
-#pragma omp parallel default(shared) private(                                  \
+#pragma omp parallel default(shared) private( \
     i, col, row, thold, lev, lpass, hpass, temp, c) firstprivate(scale, size)
   {
     temp = (float *)malloc((iheight + iwidth) * sizeof *fimg);
     FORC(nc)
-    { /* denoise R,G1,B,G3 individually */
+    {
 #pragma omp for
       for (i = 0; i < size; i++)
         fimg[i] = 256 * sqrt((double)(image[i][c] << scale));
@@ -198,13 +199,9 @@ void LibRaw::wavelet_denoise()
         image[i][c] = CLIP(SQR(fimg[i] + fimg[lpass + i]) / 0x10000);
     }
     free(temp);
-  } /* end omp parallel */
-  /* the following loops are hard to parallelize, no idea yes,
-   * problem is wlast which is carrying dependency
-   * second part should be easier, but did not yet get it right.
-   */
+  }
   if (filters && colors == 3)
-  { /* pull G1 and G3 closer together */
+  {
     for (row = 0; row < 2; row++)
     {
       mul[row] = 0.125 * pre_mul[FC(row + 1, 0) | 1] / pre_mul[FC(row, 0) | 1];
@@ -248,7 +245,7 @@ void LibRaw::median_filter()
 {
   ushort(*pix)[4];
   int pass, c, i, j, k, med[9];
-  static const uchar opt[] = /* Optimal 9-element median search */
+  static const uchar opt[] =
       {1, 2, 4, 5, 7, 8, 0, 1, 3, 4, 6, 7, 1, 2, 4, 5, 7, 8, 0,
        3, 5, 8, 4, 7, 3, 6, 1, 4, 2, 5, 4, 7, 4, 2, 6, 4, 4, 2};
 

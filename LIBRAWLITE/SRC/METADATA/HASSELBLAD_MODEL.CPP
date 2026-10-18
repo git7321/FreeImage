@@ -29,7 +29,7 @@
     { LIBRAW_HF_AdobeDNG_fromPhocusDNG, "a(hDNG)"},
   };
 
-const char* LibRaw::HassyRawFormat_idx2HR(unsigned idx) // HR means "human-readable"
+const char* LibRaw::HassyRawFormat_idx2HR(unsigned idx)
 {
     for (int i = 0; i < int(sizeof HassyRawFormat / sizeof *HassyRawFormat); i++)
         if((unsigned)HassyRawFormat[i].idx == idx)
@@ -48,9 +48,9 @@ void LibRaw::process_Hassy_Lens (int LensMount) {
     return;
 
   if (LensMount == LIBRAW_MOUNT_Hasselblad_H) {
-    if (imgdata.lens.Lens[2] == ' ') // HC lens
+    if (imgdata.lens.Lens[2] == ' ')
       ilm.LensID = LensMount*100000000UI64 + 10000000UI64;
-    else                             // HCD lens
+    else
       ilm.LensID = LensMount*100000000UI64 + 20000000UI64;
     ilm.LensFormat = LIBRAW_FORMAT_645;
   } else if (LensMount == LIBRAW_MOUNT_Hasselblad_XCD) {
@@ -76,13 +76,13 @@ void LibRaw::process_Hassy_Lens (int LensMount) {
 
 static void limited_strcat(char * src, const char *append, size_t maxsize)
 {
-	if (strlen(src) + strlen(append) < maxsize) // Silently ignore on overflow
+	if (strlen(src) + strlen(append) < maxsize)
 		strcat(src, append);
 }
 
 void LibRaw::parseHassyModel() {
 
-static const char *Hasselblad_Ctrl[] = { // manually selectable options only
+static const char *Hasselblad_Ctrl[] = {
   "ELD", "ELX", "Winder CW", "CW", "Pinhole", "Flash Sync",
   "SWC", "200 (Mod)", "200", "500 Mech.", "500", "H Series",
   "H-Series", "H1", "H2", "Black Box", "LENSCONTROL S", "LENSCTRL S", "Generic",
@@ -100,6 +100,7 @@ static const char *Hasselblad_SensorEnclosures[] = {
   int add_MP_toName = 1;
   int norm_model_isSet = 0;
 
+  memset(tmp_model, 0, sizeof(tmp_model));
   if (model[0] == ' ')
     memmove(model, model+1, MIN(sizeof(model)-1,strlen(model)));
 
@@ -148,8 +149,8 @@ static const char *Hasselblad_SensorEnclosures[] = {
     }
   }
 
-  if (imHassy.format == LIBRAW_HF_AdobeDNG) { // Adobe DNG, use LocalizedCameraModel
-      imgdata.color.LocalizedCameraModel[63] = 0; // make sure it's 0-terminated
+  if (imHassy.format == LIBRAW_HF_AdobeDNG) {
+      imgdata.color.LocalizedCameraModel[63] = 0;
     if ((ps = strrchr(imgdata.color.LocalizedCameraModel, '-')))
       c = int(ps-imgdata.color.LocalizedCameraModel);
     else c = int(strlen(imgdata.color.LocalizedCameraModel));
@@ -180,19 +181,18 @@ static const char *Hasselblad_SensorEnclosures[] = {
   if ((eos = strrchr(imHassy.CaptureSequenceInitiator, '/'))) {
     *eos = 0;
   }
-// check if model tag contains manual CaptureSequenceInitiator info:
   FORC(int(sizeof Hasselblad_Ctrl / sizeof *Hasselblad_Ctrl)) {
     if (strcasestr(model, Hasselblad_Ctrl[c])) {
-// yes, fill 'model' with sensor unit data
-      strncpy(model, tmp_model,63);
+      if(strlen(tmp_model))
+		strncpy(model, tmp_model,63);
       model[63] = 0;
       break;
     }
   }
 
-  if (!imHassy.HostBody[0]) {
-    ps = strchr(model, '-');
-    if (ps) {                  // check if model contains both host body and sensor version, resolution, MS info
+  if (!imHassy.HostBody[0] && strlen(model) > 2 ) {
+    ps = strchr(model+2, '-');
+    if (ps) {
       strncpy(imHassy.SensorUnit, model,63);
       memcpy(imHassy.HostBody, model, ps-model);
       imHassy.HostBody[ps-model] = 0;
@@ -201,11 +201,11 @@ static const char *Hasselblad_SensorEnclosures[] = {
       strncpy(imHassy.Sensor, ps,7);
       imHassy.Sensor[7] = 0;
       add_MP_toName = 0;
-    } else { // model contains host body only
+    } else {
       strncpy(imHassy.HostBody, model,63);
       imHassy.HostBody[63] = 0;
-  // fill 'model' with sensor unit data
-      strncpy(model, tmp_model,63);
+      if(strlen(tmp_model))
+		strncpy(model, tmp_model,63);
       model[63] = 0;
     }
   }
@@ -308,54 +308,43 @@ static const char *Hasselblad_SensorEnclosures[] = {
         strcpy(model, "X1D-50c");
       }
     }
-
   } else if ((imHassy.SensorCode == 12) &&
              (imHassy.CoatingCode == 4)) {
     strcpy(imHassy.Sensor, "-60");
     cpynorm("60-Coated");
-
   } else if ((imHassy.SensorCode == 17) &&
              (imHassy.CoatingCode == 5)) {
     strcpy(imHassy.Sensor, "-100c");
     cpynorm("100-17-Coated5");
-
   } else if ((imHassy.SensorCode == 20) &&
              (imHassy.CoatingCode == 6)) {
     strcpy(imHassy.Sensor, "-100c");
     cpynorm("100-20-Coated6");
-
-  } else if ((raw_width == 4090) || // V96C
+  } else if ((raw_width == 4090) ||
              ((raw_width == 4096) && (raw_height == 4096)) ||
-             ((raw_width == 4088) && (raw_height == 4088)) || // Adobe crop
-             ((raw_width == 4080) && (raw_height == 4080))) { // Phocus crop
+             ((raw_width == 4088) && (raw_height == 4088)) ||
+             ((raw_width == 4080) && (raw_height == 4080))) {
     strcpy(imHassy.Sensor, "-16");
     cpynorm("16-Uncoated");
     if (!imHassy.SensorCode) imHassy.SensorCode = 4;
-
   } else if ((raw_width == 5568) && (raw_height == 3648)) {
     strcpy(imHassy.Sensor, "-20c");
-
   } else if (((raw_width == 4096) && (raw_height == 5456)) ||
-             ((raw_width == 4088) && (raw_height == 5448)) ||  // Adobe crop
-             ((raw_width == 4080) && (raw_height == 5440))) {  // Phocus crop
+             ((raw_width == 4088) && (raw_height == 5448)) ||
+             ((raw_width == 4080) && (raw_height == 5440))) {
     strcpy(imHassy.Sensor, "-22");
     cpynorm("22-Uncoated");
     if (!imHassy.SensorCode) imHassy.SensorCode = 6;
-
   } else if (((raw_width == 6542) && (raw_height == 4916)) ||
-             ((raw_width == 6504) && (raw_height == 4880)) || // Adobe crop
-             ((raw_width == 6496) && (raw_height == 4872))) { // Phocus crop
+             ((raw_width == 6504) && (raw_height == 4880)) ||
+             ((raw_width == 6496) && (raw_height == 4872))) {
     strcpy(imHassy.Sensor, "-31");
     cpynorm("31-Uncoated");
     if (!imHassy.SensorCode) imHassy.SensorCode = 8;
-
-  } else if (((raw_width == 7262) && (raw_height == 5456)) || //
-             ((raw_width == 7224) && (raw_height == 5420)) || // Adobe crop
-             ((raw_width == 7216) && (raw_height == 5412)) || // Phocus crop
-             ((raw_width == 7212) && (raw_height == 5412)) || // CF-39, CFV-39, possibly v.II; Phocus crop
-// uncropped, when the exact size is unknown, should be:
-// - greater or equal to the smallest Phocus crop for the current size
-// - smaller than the smallest Phocus crop for the next size
+  } else if (((raw_width == 7262) && (raw_height == 5456)) ||
+             ((raw_width == 7224) && (raw_height == 5420)) ||
+             ((raw_width == 7216) && (raw_height == 5412)) ||
+             ((raw_width == 7212) && (raw_height == 5412)) ||
            ((nPix >= 7212*5412) && (nPix < 7304*5478))) {
     strcpy(imHassy.Sensor, "-39");
     if (!imHassy.SensorCode) imHassy.SensorCode = 9;
@@ -370,20 +359,18 @@ static const char *Hasselblad_SensorEnclosures[] = {
         strcpy(model, "H3D-39");
         add_MP_toName = 0;
         cpynorm("39-Uncoated");
-
       } else {
         strcpy(model, "H3DII-39");
         add_MP_toName = 0;
         cpynorm("39-Coated");
         if (!imHassy.CoatingCode) imHassy.CoatingCode = 4;
       }
-
     } else
       cpynorm("39-Uncoated");
 
-  } else if (((raw_width == 7410) && (raw_height == 5586)) || // (H4D-40, H5D-40)
-             ((raw_width == 7312) && (raw_height == 5486)) || // Adobe crop
-             ((raw_width == 7304) && (raw_height == 5478))) { // Phocus crop
+  } else if (((raw_width == 7410) && (raw_height == 5586)) ||
+             ((raw_width == 7312) && (raw_height == 5486)) ||
+             ((raw_width == 7304) && (raw_height == 5478))) {
     strcpy(imHassy.Sensor, "-40");
     if (!strncmp(model, "H4D", 3)) {
       cpynorm("40-Coated");
@@ -395,16 +382,16 @@ static const char *Hasselblad_SensorEnclosures[] = {
       if (!imHassy.CoatingCode) imHassy.CoatingCode = 5;
     }
 
-  } else if (((raw_width == 8282) && (raw_height == 6240)) || // (CFV-50, H3DII-50, H5D-50)
-             ((raw_width == 8184) && (raw_height == 6140)) || // Adobe crop
-             ((raw_width == 8176) && (raw_height == 6132))) { // Phocus crop
+  } else if (((raw_width == 8282) && (raw_height == 6240)) ||
+             ((raw_width == 8184) && (raw_height == 6140)) ||
+             ((raw_width == 8176) && (raw_height == 6132))) {
     strcpy(imHassy.Sensor, "-50");
     if (!strncmp(model, "H5D", 3)) {
       cpynorm("50-Coated5");
       if (!imHassy.SensorCode) imHassy.SensorCode = 11;
       if (!imHassy.CoatingCode) imHassy.CoatingCode = 5;
     } else {
-      cpynorm("50-Coated"); // CFV-50, H3DII-50,
+      cpynorm("50-Coated");
       if (!strncmp(model, "H3D", 3)) {
         strcpy(model, "H3DII-50");
       if (!imHassy.SensorCode) imHassy.SensorCode = 11;
@@ -412,11 +399,10 @@ static const char *Hasselblad_SensorEnclosures[] = {
         add_MP_toName = 0;
       }
     }
-
-  } else if (((raw_width == 8374) && (raw_height == 6304)) ||  // (H5D-50c, CFV-50c)
-             ((raw_width == 8384) && (raw_height == 6304)) ||  // (X1D-50c, "X1D II 50C", "CFV II 50C")
-             ((raw_width == 8280) && (raw_height == 6208)) ||  // Adobe crop
-             ((raw_width == 8272) && (raw_height == 6200))) {  // Phocus crop
+  } else if (((raw_width == 8374) && (raw_height == 6304)) ||
+             ((raw_width == 8384) && (raw_height == 6304)) ||
+             ((raw_width == 8280) && (raw_height == 6208)) ||
+             ((raw_width == 8272) && (raw_height == 6200))) {
     cpynorm("50-15-Coated5");
     if (!imHassy.SensorCode) imHassy.SensorCode = 15;
     if (!imHassy.CoatingCode) imHassy.CoatingCode = 5;
@@ -438,37 +424,34 @@ static const char *Hasselblad_SensorEnclosures[] = {
         strcpy(model, "X1D-50c");
       }
     }
-
   } else if (((raw_width == 9044) && (raw_height == 6732)) ||
-             ((raw_width == 8964) && (raw_height == 6716)) || // Adobe crop
-             ((raw_width == 8956) && (raw_height == 6708))) { // Phocus crop
+             ((raw_width == 8964) && (raw_height == 6716)) ||
+             ((raw_width == 8956) && (raw_height == 6708))) {
     strcpy(imHassy.Sensor, "-60");
     cpynorm("60-Coated");
     if (!imHassy.SensorCode) imHassy.SensorCode = 12;
     if (!imHassy.CoatingCode) imHassy.CoatingCode = 4;
 
-
-  } else if (((raw_width == 10320) && (raw_height == 7752)) || // Phocus crop, A5D-80
+  } else if (((raw_width == 10320) && (raw_height == 7752)) ||
              ((nPix >= 10320*7752) && (nPix < 10520*8000))) {
     strcpy(imHassy.Sensor, "-80");
     cpynorm("80-Coated");
 
   } else if (((raw_width == 12000) && (raw_height == 8816)) ||
-             ((raw_width == 11608) && (raw_height == 8708)) || // Adobe crop
-             ((raw_width == 11600) && (raw_height == 8700))) { // Phocus crop
+             ((raw_width == 11608) && (raw_height == 8708)) ||
+             ((raw_width == 11600) && (raw_height == 8700))) {
     strcpy(imHassy.Sensor, "-100c");
     cpynorm("100-17-Coated5");
     if (!imHassy.SensorCode) imHassy.SensorCode = 17;
     if (!imHassy.CoatingCode) imHassy.CoatingCode = 5;
 
-  } else if (((raw_width == 11904) && (raw_height == 8842)) || // X2D 100C, CFV 100C
-             ((raw_width == 11664) && (raw_height == 8750)) || // Adobe crop
-             ((raw_width == 11656) && (raw_height == 8742))) { // Phocus crop
+  } else if (((raw_width == 11904) && (raw_height == 8842)) ||
+             ((raw_width == 11664) && (raw_height == 8750)) ||
+             ((raw_width == 11656) && (raw_height == 8742))) {
     strcpy(imHassy.Sensor, "-100c");
     cpynorm("100-20-Coated6");
     if (!imHassy.SensorCode) imHassy.SensorCode = 20;
     if (!imHassy.CoatingCode) imHassy.CoatingCode = 6;
-
   }
 
   if (raw_width == 4090)
@@ -491,7 +474,6 @@ static const char *Hasselblad_SensorEnclosures[] = {
 		((raw_width == 11904) && (raw_height ==  8842))
 	)
 	imHassy.uncropped = 1;
-
 
   if (model[0] && add_MP_toName)
 	  limited_strcat(model, imHassy.Sensor,sizeof(model));

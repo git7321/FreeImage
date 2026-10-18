@@ -1112,8 +1112,7 @@ int crxDecodeLineWithIQuantization(CrxSubband *band, CrxQStep *qStep)
   }
   else
   {
-    // prev. version
-    int32_t qScale = q_step_tbl[band->qParam % 6] >> (6 - band->qParam / 6);
+    int32_t qScale = q_step_tbl[MAX(0, band->qParam % 6)] >> (6 - band->qParam / 6);
     if (band->qParam / 6 >= 6)
       qScale = q_step_tbl[band->qParam % 6] * (1 << (band->qParam / 6 + 26));
 
@@ -1662,7 +1661,7 @@ void crxConvertPlaneLine(CrxImage *img, int imageRow, int imageCol = 0, int plan
 {
   if (lineData)
   {
-    uint64_t rawOffset = 4 * img->planeWidth * imageRow + 2 * imageCol;
+    uint64_t rawOffset = 4UI64 * uint64_t(img->planeWidth) * uint64_t(imageRow) + 2UI64 * uint64_t(imageCol);
     if (img->encType == 1)
     {
       int32_t maxVal = 1 << (img->nBits - 1);
@@ -1704,7 +1703,7 @@ void crxConvertPlaneLine(CrxImage *img, int imageRow, int imageCol = 0, int plan
 
     int32_t median = (1 << (img->medianBits - 1)) << 10;
     int32_t maxVal = (1 << img->medianBits) - 1;
-    uint32_t rawLineOffset = 4 * img->planeWidth * imageRow;
+    uint64_t rawLineOffset = 4UI64 * uint64_t(img->planeWidth) * uint64_t(imageRow);
 
     // for this stage - all except imageRow is ignored
     for (int i = 0; i < img->planeWidth; i++)

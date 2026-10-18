@@ -1126,9 +1126,10 @@ dng_skip:
     width = (height >> fuji_layout) + fuji_width;
     height = width - 1;
     pixel_aspect = 1;
-	// Prevent incorrect-sized fuji-rotated files
-	if (INT64(width)*INT64(height) > INT64(raw_width) * INT64(raw_height) * 8LL)
+	if (INT64(width)*INT64(height) > INT64(raw_width) * INT64(raw_height) * 8I64)
 		is_raw = 0;
+	if(width > 8192 || height > 8192 || raw_width > 8192 || raw_height > 8192)
+      is_raw = 0;
   }
   else
   {

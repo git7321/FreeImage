@@ -36,17 +36,13 @@ BSD-style License
 #undef DS
 #endif
 #ifdef ID
-#undef ID /* used in x3f utils */
+#undef ID
 #endif
 
 #include "../../internal/x3f_tools.h"
 
-/* extern */ int legacy_offset = 0;
-/* extern */ bool_t auto_legacy_offset = 1;
-
-/* --------------------------------------------------------------------- */
-/* Reading and writing - assuming little endian in the file              */
-/* --------------------------------------------------------------------- */
+int legacy_offset = 0;
+bool_t auto_legacy_offset = 1;
 
 static void *x3f_limited_malloc(UINT64 sz)
 {
@@ -77,6 +73,7 @@ static void *x3f_limited_realloc(void *ptr, UINT64 sz)
     throw LIBRAW_EXCEPTION_ALLOC;
   return ret;
 }
+
 
 static int x3f_get1(LibRaw_abstract_datastream *f)
 {
@@ -197,10 +194,6 @@ unsigned x3f_get4(LibRaw_abstract_datastream *f)
     }                                                                          \
   } while (0)
 
-/* --------------------------------------------------------------------- */
-/* Allocating Huffman tree help data                                   */
-/* --------------------------------------------------------------------- */
-
 static void cleanup_huffman_tree(x3f_hufftree_t *HTP) { free(HTP->nodes); }
 
 static void new_huffman_tree(x3f_hufftree_t *HTP, int bits)
@@ -212,10 +205,6 @@ static void new_huffman_tree(x3f_hufftree_t *HTP, int bits)
   HTP->nodes = (x3f_huffnode_t *)x3f_limited_calloc(1, HUF_TREE_MAX_NODES(leaves) *
                                                sizeof(x3f_huffnode_t));
 }
-
-/* --------------------------------------------------------------------- */
-/* Allocating TRUE engine RAW help data                                  */
-/* --------------------------------------------------------------------- */
 
 static void cleanup_true(x3f_true_t **TRUP)
 {
@@ -289,10 +278,6 @@ static x3f_quattro_t *new_quattro(x3f_quattro_t **QP)
   return Q;
 }
 
-/* --------------------------------------------------------------------- */
-/* Allocating Huffman engine help data                                   */
-/* --------------------------------------------------------------------- */
-
 static void cleanup_huffman(x3f_huffman_t **HUFP)
 {
   x3f_huffman_t *HUF = *HUFP;
@@ -317,7 +302,6 @@ static x3f_huffman_t *new_huffman(x3f_huffman_t **HUFP)
 
   cleanup_huffman(HUFP);
 
-  /* Set all not read data block pointers to NULL */
   HUF->mapping.size = 0;
   HUF->mapping.element = NULL;
   HUF->table.size = 0;
@@ -335,11 +319,7 @@ static x3f_huffman_t *new_huffman(x3f_huffman_t **HUFP)
   return HUF;
 }
 
-/* --------------------------------------------------------------------- */
-/* Creating a new x3f structure from file                                */
-/* --------------------------------------------------------------------- */
-
-/* extern */ x3f_t *x3f_new_from_file(LibRaw_abstract_datastream *infile)
+x3f_t *x3f_new_from_file(LibRaw_abstract_datastream *infile)
 {
   if (!infile)
     return NULL;
@@ -357,7 +337,6 @@ static x3f_huffman_t *new_huffman(x3f_huffman_t **HUFP)
     I->input.file = infile;
     I->output.file = NULL;
 
-    /* Read file header */
     H = &x3f->header;
     infile->seek(0, SEEK_SET);
     GET4(H->identifier);
@@ -391,8 +370,6 @@ static x3f_huffman_t *new_huffman(x3f_huffman_t **HUFP)
     }
     else if (H->version < X3F_VERSION(5, 0))
     {
-      /* TODO: the meaning of the rest of the header for version >= 4.0 
-      * (Quattro) is unknown */
       infile->seek(12, SEEK_CUR);
       GETN(H->unique_identifier, SIZE_UNIQUE_IDENTIFIER);
       infile->seek(4, SEEK_CUR);
@@ -401,18 +378,16 @@ static x3f_huffman_t *new_huffman(x3f_huffman_t **HUFP)
       GET4(H->rotation);
     }
 
-    /* Go to the beginning of the directory */
     infile->seek(-4, SEEK_END);
     infile->seek(x3f_get4(infile), SEEK_SET);
 
-    /* Read the directory header */
     DS = &x3f->directory_section;
     GET4(DS->identifier);
     GET4(DS->version);
     GET4(DS->num_directory_entries);
 
     if (DS->num_directory_entries > 50)
-      goto _err; // too much direntries, most likely broken file
+      goto _err;
 
     if (DS->num_directory_entries > 0)
     {
@@ -420,14 +395,12 @@ static x3f_huffman_t *new_huffman(x3f_huffman_t **HUFP)
       DS->directory_entry = (x3f_directory_entry_t *)x3f_limited_calloc(1, size);
     }
 
-    /* Traverse the directory */
     for (d = 0; d < (int)DS->num_directory_entries; d++)
     {
       x3f_directory_entry_t *DE = &DS->directory_entry[d];
       x3f_directory_entry_header_t *DEH = &DE->header;
       INT64 save_dir_pos;
 
-      /* Read the directory entry info */
       GET4(DE->input.offset);
       GET4(DE->input.size);
       if (DE->input.offset + DE->input.size > fsize * 2)
@@ -438,29 +411,23 @@ static x3f_huffman_t *new_huffman(x3f_huffman_t **HUFP)
 
       GET4(DE->type);
 
-      /* Save current pos and go to the entry */
       save_dir_pos = infile->tell();
       infile->seek(DE->input.offset, SEEK_SET);
 
-      /* Read the type independent part of the entry header */
       DEH = &DE->header;
       GET4(DEH->identifier);
       GET4(DEH->version);
-
-      /* NOTE - the tests below could be made on DE->type instead */
 
       if (DEH->identifier == X3F_SECp)
       {
         x3f_property_list_t *PL = &DEH->data_subsection.property_list;
         if (!PL)
           goto _err;
-        /* Read the property part of the header */
         GET4(PL->num_properties);
         GET4(PL->character_format);
         GET4(PL->reserved);
         GET4(PL->total_length);
 
-        /* Set all not read data block pointers to NULL */
         PL->data = NULL;
         PL->data_size = 0;
       }
@@ -470,7 +437,6 @@ static x3f_huffman_t *new_huffman(x3f_huffman_t **HUFP)
         x3f_image_data_t *ID = &DEH->data_subsection.image_data;
         if (!ID)
           goto _err;
-        /* Read the image part of the header */
         GET4(ID->type);
         GET4(ID->format);
         ID->type_format = (ID->type << 16) + (ID->format);
@@ -478,7 +444,6 @@ static x3f_huffman_t *new_huffman(x3f_huffman_t **HUFP)
         GET4(ID->rows);
         GET4(ID->row_stride);
 
-        /* Set all not read data block pointers to NULL */
         ID->huffman = NULL;
 
         ID->data = NULL;
@@ -490,18 +455,15 @@ static x3f_huffman_t *new_huffman(x3f_huffman_t **HUFP)
         x3f_camf_t *CAMF = &DEH->data_subsection.camf;
         if (!CAMF)
           goto _err;
-        /* Read the CAMF part of the header */
         GET4(CAMF->type);
         GET4(CAMF->tN.val0);
         GET4(CAMF->tN.val1);
         GET4(CAMF->tN.val2);
         GET4(CAMF->tN.val3);
 
-        /* Set all not read data block pointers to NULL */
         CAMF->data = NULL;
         CAMF->data_size = 0;
 
-        /* Set all not allocated help pointers to NULL */
         CAMF->table.element = NULL;
         CAMF->table.size = 0;
         CAMF->tree.nodes = NULL;
@@ -511,7 +473,6 @@ static x3f_huffman_t *new_huffman(x3f_huffman_t **HUFP)
         CAMF->entry_table.size = 0;
       }
 
-      /* Reset the file pointer back to the directory */
       infile->seek(save_dir_pos, SEEK_SET);
     }
 
@@ -536,10 +497,6 @@ static x3f_huffman_t *new_huffman(x3f_huffman_t **HUFP)
   }
 }
 
-/* --------------------------------------------------------------------- */
-/* Clean up an x3f structure                                             */
-/* --------------------------------------------------------------------- */
-
 static void free_camf_entry(camf_entry_t *entry)
 {
   FREE(entry->property_name);
@@ -548,7 +505,7 @@ static void free_camf_entry(camf_entry_t *entry)
   FREE(entry->matrix_dim_entry);
 }
 
-/* extern */ x3f_return_t x3f_delete(x3f_t *x3f)
+x3f_return_t x3f_delete(x3f_t *x3f)
 {
   x3f_directory_section_t *DS;
   int d;
@@ -609,12 +566,6 @@ static void free_camf_entry(camf_entry_t *entry)
   return X3F_OK;
 }
 
-/* --------------------------------------------------------------------- */
-/* Getting a reference to a directory entry                              */
-/* --------------------------------------------------------------------- */
-
-/* TODO: all those only get the first instance */
-
 static x3f_directory_entry_t *x3f_get(x3f_t *x3f, uint32_t type,
                                       uint32_t image_type)
 {
@@ -652,7 +603,7 @@ static x3f_directory_entry_t *x3f_get(x3f_t *x3f, uint32_t type,
   return NULL;
 }
 
-/* extern */ x3f_directory_entry_t *x3f_get_raw(x3f_t *x3f)
+x3f_directory_entry_t *x3f_get_raw(x3f_t *x3f)
 {
   x3f_directory_entry_t *DE;
 
@@ -682,45 +633,33 @@ static x3f_directory_entry_t *x3f_get(x3f_t *x3f, uint32_t type,
   return NULL;
 }
 
-/* extern */ x3f_directory_entry_t *x3f_get_thumb_plain(x3f_t *x3f)
+x3f_directory_entry_t *x3f_get_thumb_plain(x3f_t *x3f)
 {
   return x3f_get(x3f, X3F_SECi, X3F_IMAGE_THUMB_PLAIN);
 }
 
-/* extern */ x3f_directory_entry_t *x3f_get_thumb_huffman(x3f_t *x3f)
+x3f_directory_entry_t *x3f_get_thumb_huffman(x3f_t *x3f)
 {
   return x3f_get(x3f, X3F_SECi, X3F_IMAGE_THUMB_HUFFMAN);
 }
 
-/* extern */ x3f_directory_entry_t *x3f_get_thumb_jpeg(x3f_t *x3f)
+x3f_directory_entry_t *x3f_get_thumb_jpeg(x3f_t *x3f)
 {
   return x3f_get(x3f, X3F_SECi, X3F_IMAGE_THUMB_JPEG);
 }
 
-/* extern */ x3f_directory_entry_t *x3f_get_camf(x3f_t *x3f)
+x3f_directory_entry_t *x3f_get_camf(x3f_t *x3f)
 {
   return x3f_get(x3f, X3F_SECc, 0);
 }
 
-/* extern */ x3f_directory_entry_t *x3f_get_prop(x3f_t *x3f)
+x3f_directory_entry_t *x3f_get_prop(x3f_t *x3f)
 {
   return x3f_get(x3f, X3F_SECp, 0);
 }
 
-/* For some obscure reason, the bit numbering is weird. It is
-   generally some kind of "big endian" style - e.g. the bit 7 is the
-   first in a byte and bit 31 first in a 4 byte int. For patterns in
-   the huffman pattern table, bit 27 is the first bit and bit 26 the
-   next one. */
-
 #define PATTERN_BIT_POS(_len, _bit) ((_len) - (_bit)-1)
 #define MEMORY_BIT_POS(_bit) PATTERN_BIT_POS(8, _bit)
-
-/* --------------------------------------------------------------------- */
-/* Huffman Decode                                                        */
-/* --------------------------------------------------------------------- */
-
-/* Make the huffman tree */
 
 #ifdef DBG_PRNT
 static char *display_code(int length, uint32_t code, char *buffer)
@@ -790,7 +729,6 @@ static void populate_true_huffman_tree(x3f_hufftree_t *tree,
 
     if (length != 0)
     {
-      /* add_code_to_tree wants the code right adjusted */
       uint32_t code = ((element->code) >> (8 - length)) & 0xff;
       uint32_t value = i;
 
@@ -826,9 +764,6 @@ static void populate_huffman_tree(x3f_hufftree_t *tree, x3f_table32_t *table,
       uint32_t code = HUF_TREE_GET_CODE(element);
       uint32_t value;
 
-      /* If we have a valid mapping table - then the value from the
-         mapping table shall be used. Otherwise we use the current
-         index in the table as value. */
       if (table->size == mapping->size)
         value = mapping->element[i];
       else
@@ -870,18 +805,18 @@ static void print_huffman_tree(x3f_huffnode_t *t, int length, uint32_t code)
 }
 #endif
 
-/* Help machinery for reading bits in a memory */
-
 typedef struct bit_state_s
 {
   uint8_t *next_address;
+  uint8_t *last_address;
   uint8_t bit_offset;
   uint8_t bits[8];
 } bit_state_t;
 
-static void set_bit_state(bit_state_t *BS, uint8_t *address)
+static void set_bit_state(bit_state_t *BS, uint8_t *address, uint8_t* last_addr)
 {
   BS->next_address = address;
+  BS->last_address = last_addr;
   BS->bit_offset = 8;
 }
 
@@ -898,13 +833,13 @@ static uint8_t get_bit(bit_state_t *BS)
       byte = byte >> 1;
     }
     BS->next_address++;
+	if (BS->next_address > BS->last_address) 
+		throw LIBRAW_EXCEPTION_IO_CORRUPT;
     BS->bit_offset = 0;
   }
 
   return BS->bits[BS->bit_offset++];
 }
-
-/* Decode use the TRUE algorithm */
 
 static int32_t get_true_diff(bit_state_t *BS, x3f_hufftree_t *HTP)
 {
@@ -920,7 +855,6 @@ static int32_t get_true_diff(bit_state_t *BS, x3f_hufftree_t *HTP)
     node = new_node;
     if (node == NULL)
     {
-      /* TODO: Shouldn't this be treated as a fatal error? */
       return 0;
     }
   }
@@ -946,22 +880,11 @@ static int32_t get_true_diff(bit_state_t *BS, x3f_hufftree_t *HTP)
   return diff;
 }
 
-/* This code (that decodes one of the X3F color planes, really is a
-   decoding of a compression algorithm suited for Bayer CFA data. In
-   Bayer CFA the data is divided into 2x2 squares that represents
-   (R,G1,G2,B) data. Those four positions are (in this compression)
-   treated as one data stream each, where you store the differences to
-   previous data in the stream. The reason for this is, of course,
-   that the date is more often than not near to the next data in a
-   stream that represents the same color. */
-
-/* TODO: write more about the compression */
-
 static void true_decode_one_color(x3f_image_data_t *ID, int color)
 {
   x3f_true_t *TRU = ID->tru;
   x3f_quattro_t *Q = ID->quattro;
-  uint32_t seed = TRU->seed[color]; /* TODO : Is this correct ? */
+  uint32_t seed = TRU->seed[color];
   int row;
 
   x3f_hufftree_t *tree = &TRU->tree;
@@ -973,7 +896,7 @@ static void true_decode_one_color(x3f_image_data_t *ID, int color)
   x3f_area16_t *area = &TRU->x3rgb16;
   uint16_t *dst = area->data + color;
 
-  set_bit_state(&BS, TRU->plane_address[color]);
+  set_bit_state(&BS, TRU->plane_address[color],(uint8_t*)ID->data+ID->data_size);
 
   row_start_acc[0][0] = seed;
   row_start_acc[0][1] = seed;
@@ -1018,7 +941,6 @@ static void true_decode_one_color(x3f_image_data_t *ID, int color)
       if (col < 2)
         row_start_acc[odd_row][odd_col] = value;
 
-      /* Discard additional data at the right for binned Quattro plane 2 */
       if (col >= (int)area->columns)
         continue;
 
@@ -1028,7 +950,7 @@ static void true_decode_one_color(x3f_image_data_t *ID, int color)
   }
 }
 
-static void true_decode(x3f_info_t * /*I*/, x3f_directory_entry_t *DE)
+static void true_decode(x3f_info_t *, x3f_directory_entry_t *DE)
 {
   x3f_directory_entry_header_t *DEH = &DE->header;
   x3f_image_data_t *ID = &DEH->data_subsection.image_data;
@@ -1039,8 +961,6 @@ static void true_decode(x3f_info_t * /*I*/, x3f_directory_entry_t *DE)
     true_decode_one_color(ID, color);
   }
 }
-
-/* Decode use the huffman tree */
 
 static int32_t get_huffman_diff(bit_state_t *BS, x3f_hufftree_t *HTP)
 {
@@ -1055,9 +975,8 @@ static int32_t get_huffman_diff(bit_state_t *BS, x3f_hufftree_t *HTP)
     node = new_node;
     if (node == NULL)
     {
-      /* TODO: Shouldn't this be treated as a fatal error? */
       throw LIBRAW_EXCEPTION_IO_CORRUPT;
-      return 0; /* unreachable code */
+      return 0;
     }
   }
 
@@ -1066,8 +985,8 @@ static int32_t get_huffman_diff(bit_state_t *BS, x3f_hufftree_t *HTP)
   return diff;
 }
 
-static void huffman_decode_row(x3f_info_t * /*I*/, x3f_directory_entry_t *DE,
-                               int /*bits*/, int row, int offset, int *minimum)
+static void huffman_decode_row(x3f_info_t *, x3f_directory_entry_t *DE,
+                               int, int row, int offset, int *minimum)
 {
   x3f_directory_entry_header_t *DEH = &DE->header;
   x3f_image_data_t *ID = &DEH->data_subsection.image_data;
@@ -1079,7 +998,7 @@ static void huffman_decode_row(x3f_info_t * /*I*/, x3f_directory_entry_t *DE,
 
   if (HUF->row_offsets.element[row] > ID->data_size - 1)
 	  throw LIBRAW_EXCEPTION_IO_CORRUPT;
-  set_bit_state(&BS, (uint8_t *)ID->data + HUF->row_offsets.element[row]);
+  set_bit_state(&BS, (uint8_t *)ID->data + HUF->row_offsets.element[row], (uint8_t*)ID->data+ID->data_size);
 
   for (col = 0; col < (int)ID->columns; col++)
   {
@@ -1112,7 +1031,6 @@ static void huffman_decode_row(x3f_info_t * /*I*/, x3f_directory_entry_t *DE,
         HUF->rgb8.data[3 * (row * ID->columns + col) + color] = (uint8_t)c_fix;
         break;
       default:
-        /* TODO: Shouldn't this be treated as a fatal error? */
         throw LIBRAW_EXCEPTION_IO_CORRUPT;
       }
     }
@@ -1147,15 +1065,21 @@ static int32_t get_simple_diff(x3f_huffman_t *HUF, uint16_t index)
     return HUF->mapping.element[index];
 }
 
-static void simple_decode_row(x3f_info_t * /*I*/, x3f_directory_entry_t *DE,
-                              int bits, int row, int row_stride)
+static void simple_decode_row(x3f_info_t *, x3f_directory_entry_t *DE,
+                              int bits, int row, uint32_t row_stride)
 {
   x3f_directory_entry_header_t *DEH = &DE->header;
   x3f_image_data_t *ID = &DEH->data_subsection.image_data;
   x3f_huffman_t *HUF = ID->huffman;
 
-  if (row*row_stride > (int)(ID->data_size - (ID->columns*sizeof(uint32_t))))
-	  throw LIBRAW_EXCEPTION_IO_CORRUPT;
+  uint64_t needed = uint64_t(ID->columns) * sizeof(uint32_t);
+  uint64_t offset = uint64_t(row) * uint64_t(row_stride);
+
+  if (row_stride < needed)
+    throw LIBRAW_EXCEPTION_IO_CORRUPT;
+  if (offset > uint64_t(ID->data_size) || needed > uint64_t(ID->data_size) - offset)
+    throw LIBRAW_EXCEPTION_IO_CORRUPT;
+
   uint32_t *data = (uint32_t *)((unsigned char *)ID->data + row * row_stride);
 
   uint16_t c[3] = {0, 0, 0};
@@ -1182,7 +1106,6 @@ static void simple_decode_row(x3f_info_t * /*I*/, x3f_directory_entry_t *DE,
     break;
   default:
     mask = 0;
-    /* TODO: Shouldn't this be treated as a fatal error? */
     throw LIBRAW_EXCEPTION_IO_CORRUPT;
     break;
   }
@@ -1211,7 +1134,6 @@ static void simple_decode_row(x3f_info_t * /*I*/, x3f_directory_entry_t *DE,
         HUF->rgb8.data[3 * (row * ID->columns + col) + color] = uint8_t(c_fix);
         break;
       default:
-        /* TODO: Shouldn't this be treated as a fatal error? */
         throw LIBRAW_EXCEPTION_IO_CORRUPT;
       }
     }
@@ -1219,7 +1141,7 @@ static void simple_decode_row(x3f_info_t * /*I*/, x3f_directory_entry_t *DE,
 }
 
 static void simple_decode(x3f_info_t *I, x3f_directory_entry_t *DE, int bits,
-                          int row_stride)
+                          uint32_t row_stride)
 {
   x3f_directory_entry_header_t *DEH = &DE->header;
   x3f_image_data_t *ID = &DEH->data_subsection.image_data;
@@ -1230,12 +1152,6 @@ static void simple_decode(x3f_info_t *I, x3f_directory_entry_t *DE, int bits,
     simple_decode_row(I, DE, bits, row, row_stride);
 }
 
-/* --------------------------------------------------------------------- */
-/* Loading the data in a directory entry                                 */
-/* --------------------------------------------------------------------- */
-
-/* First you set the offset to where to start reading the data ... */
-
 static void read_data_set_offset(x3f_info_t *I, x3f_directory_entry_t *DE,
                                  uint32_t header_size)
 {
@@ -1244,12 +1160,10 @@ static void read_data_set_offset(x3f_info_t *I, x3f_directory_entry_t *DE,
   I->input.file->seek(i_off, SEEK_SET);
 }
 
-/* ... then you read the data, block for block */
-
 static uint32_t read_data_block(void **data, x3f_info_t *I,
                                 x3f_directory_entry_t *DE, uint32_t footer)
 {
-  uint32_t fpos = (I->input.file->tell() & 0x7fffffffU) ;
+  uint32_t fpos = (uint32_t)(I->input.file->tell() & 0x7fffffffU) ;
   uint32_t size = DE->input.size + DE->input.offset - fpos - footer;
 
   if (fpos + size > I->input.file->size())
@@ -1262,10 +1176,10 @@ static uint32_t read_data_block(void **data, x3f_info_t *I,
   return size;
 }
 
-static uint32_t data_block_size(void ** /*data*/, x3f_info_t *I,
+static uint32_t data_block_size(void **, x3f_info_t *I,
                                 x3f_directory_entry_t *DE, uint32_t footer)
 {
-  uint32_t fpos = (I->input.file->tell() & 0x7fffffffU);
+  uint32_t fpos = (uint32_t)(I->input.file->tell() & 0x7fffffffU);
   uint32_t size =
       DE->input.size + DE->input.offset - fpos - footer;
   return size;
@@ -1300,7 +1214,7 @@ static void x3f_load_property_list(x3f_info_t *I, x3f_directory_entry_t *DE)
   if (!PL->data_size)
     PL->data_size = read_data_block(&PL->data, I, DE, 0);
   uint32_t maxoffset = PL->data_size / sizeof(utf16_t) -
-                       2; // at least 2 chars, value + terminating 0x0000
+                       2;
 
   for (i = 0; i < (int)PL->num_properties; i++)
   {
@@ -1347,7 +1261,6 @@ static void x3f_load_true(x3f_info_t *I, x3f_directory_entry_t *DE)
     }
   }
 
-  /* Read TRUE header data */
   GET2(TRU->seed[0]);
   GET2(TRU->seed[1]);
   GET2(TRU->seed[2]);
@@ -1364,11 +1277,9 @@ static void x3f_load_true(x3f_info_t *I, x3f_directory_entry_t *DE)
 
   GET_TABLE(TRU->plane_size, GET4, TRUE_PLANES, uint32_t);
 
-  /* Read image data */
   if (!ID->data_size)
     ID->data_size = read_data_block(&ID->data, I, DE, 0);
 
-  /* TODO: can it be fewer than 8 bits? Maybe taken from TRU->table? */
   new_huffman_tree(&TRU->tree, 8);
 
   populate_true_huffman_tree(&TRU->tree, &TRU->table);
@@ -1378,6 +1289,13 @@ static void x3f_load_true(x3f_info_t *I, x3f_directory_entry_t *DE)
 #endif
 
   TRU->plane_address[0] = (uint8_t *)ID->data;
+  uint64_t psz = 0;
+  for (i = 0; i < TRUE_PLANES; i++)
+	  psz += (((TRU->plane_size.element[i] + 15) / 16) * 16);
+
+  if (psz > ID->data_size)
+	  throw LIBRAW_EXCEPTION_IO_CORRUPT;
+
   for (i = 1; i < TRUE_PLANES; i++)
     TRU->plane_address[i] = TRU->plane_address[i - 1] +
                             (((TRU->plane_size.element[i - 1] + 15) / 16) * 16);
@@ -1397,7 +1315,8 @@ static void x3f_load_true(x3f_info_t *I, x3f_directory_entry_t *DE)
     TRU->x3rgb16.rows = rows;
     TRU->x3rgb16.channels = channels;
     TRU->x3rgb16.row_stride = columns * channels;
-    TRU->x3rgb16.buf = x3f_limited_malloc(sizeof(uint16_t) * size);
+    TRU->x3rgb16.buf =
+        x3f_limited_calloc(1, sizeof(uint16_t) * size);
     TRU->x3rgb16.data = (uint16_t *)TRU->x3rgb16.buf;
 
     columns = Q->plane[2].columns;
@@ -1409,18 +1328,20 @@ static void x3f_load_true(x3f_info_t *I, x3f_directory_entry_t *DE)
     Q->top16.rows = rows;
     Q->top16.channels = channels;
     Q->top16.row_stride = columns * channels;
-    Q->top16.buf = x3f_limited_malloc(sizeof(uint16_t) * size);
+    Q->top16.buf =
+        x3f_limited_calloc(1, sizeof(uint16_t) * size);
     Q->top16.data = (uint16_t *)Q->top16.buf;
   }
   else
   {
-    UINT64 size = UINT64(ID->columns) * UINT64(ID->rows) * 3ULL;
+    UINT64 size = UINT64(ID->columns) * UINT64(ID->rows) * 3UI64;
 
     TRU->x3rgb16.columns = ID->columns;
     TRU->x3rgb16.rows = ID->rows;
     TRU->x3rgb16.channels = 3;
     TRU->x3rgb16.row_stride = ID->columns * 3;
-    TRU->x3rgb16.buf = x3f_limited_malloc(sizeof(uint16_t) * size);
+    TRU->x3rgb16.buf =
+        x3f_limited_calloc(1, sizeof(uint16_t) * size);
     TRU->x3rgb16.data = (uint16_t *)TRU->x3rgb16.buf;
   }
 
@@ -1429,7 +1350,7 @@ static void x3f_load_true(x3f_info_t *I, x3f_directory_entry_t *DE)
 
 static void x3f_load_huffman_compressed(x3f_info_t *I,
                                         x3f_directory_entry_t *DE, int bits,
-                                        int /*use_map_table*/)
+                                        int)
 {
   x3f_directory_entry_header_t *DEH = &DE->header;
   x3f_image_data_t *ID = &DEH->data_subsection.image_data;
@@ -1452,7 +1373,7 @@ static void x3f_load_huffman_compressed(x3f_info_t *I,
 
 static void x3f_load_huffman_not_compressed(x3f_info_t *I,
                                             x3f_directory_entry_t *DE, int bits,
-                                            int /*use_map_table*/, int row_stride)
+                                            int, uint32_t row_stride)
 {
   x3f_directory_entry_header_t *DEH = &DE->header;
   x3f_image_data_t *ID = &DEH->data_subsection.image_data;
@@ -1464,7 +1385,7 @@ static void x3f_load_huffman_not_compressed(x3f_info_t *I,
 }
 
 static void x3f_load_huffman(x3f_info_t *I, x3f_directory_entry_t *DE, int bits,
-                             int use_map_table, int row_stride)
+                             int use_map_table, uint32_t row_stride)
 {
   x3f_directory_entry_header_t *DEH = &DE->header;
   x3f_image_data_t *ID = &DEH->data_subsection.image_data;
@@ -1482,25 +1403,26 @@ static void x3f_load_huffman(x3f_info_t *I, x3f_directory_entry_t *DE, int bits,
   {
   case X3F_IMAGE_RAW_HUFFMAN_X530:
   case X3F_IMAGE_RAW_HUFFMAN_10BIT:
-    size = UINT64(ID->columns) * UINT64(ID->rows) * 3ULL;
+    size = UINT64(ID->columns) * UINT64(ID->rows) * 3UI64;
     HUF->x3rgb16.columns = ID->columns;
     HUF->x3rgb16.rows = ID->rows;
     HUF->x3rgb16.channels = 3;
     HUF->x3rgb16.row_stride = ID->columns * 3;
-    HUF->x3rgb16.buf = x3f_limited_malloc(sizeof(uint16_t) * size);
+    HUF->x3rgb16.buf =
+        x3f_limited_calloc(1, sizeof(uint16_t) * size);
     HUF->x3rgb16.data = (uint16_t *)HUF->x3rgb16.buf;
     break;
   case X3F_IMAGE_THUMB_HUFFMAN:
-    size = UINT64(ID->columns) * UINT64(ID->rows) * 3ULL;
+    size = UINT64(ID->columns) * UINT64(ID->rows) * 3UI64;
     HUF->rgb8.columns = ID->columns;
     HUF->rgb8.rows = ID->rows;
     HUF->rgb8.channels = 3;
     HUF->rgb8.row_stride = ID->columns * 3;
-    HUF->rgb8.buf = x3f_limited_malloc(sizeof(uint8_t) * size);
+    HUF->rgb8.buf =
+        x3f_limited_calloc(1, sizeof(uint8_t) * size);
     HUF->rgb8.data = (uint8_t *)HUF->rgb8.buf;
     break;
   default:
-    /* TODO: Shouldn't this be treated as a fatal error? */
     throw LIBRAW_EXCEPTION_IO_CORRUPT;
   }
 
@@ -1565,12 +1487,10 @@ static void x3f_load_image(x3f_info_t *I, x3f_directory_entry_t *DE)
     x3f_load_jpeg(I, DE);
     break;
   default:
-    /* TODO: Shouldn't this be treated as a fatal error? */
     throw LIBRAW_EXCEPTION_IO_CORRUPT;
   }
 }
 
-// Used only for thumbnail size estimation
 static int32_t x3f_load_image_size(x3f_info_t *I, x3f_directory_entry_t *DE)
 {
   x3f_directory_entry_header_t *DEH = &DE->header;
@@ -1596,7 +1516,7 @@ static void x3f_load_camf_decode_type2(x3f_camf_t *CAMF)
   int i;
 
   CAMF->decoded_data_size = CAMF->data_size;
-  CAMF->decoded_data = x3f_limited_malloc(CAMF->decoded_data_size);
+  CAMF->decoded_data = x3f_limited_calloc(1, CAMF->decoded_data_size);
 
   for (i = 0; i < (int)CAMF->data_size; i++)
   {
@@ -1610,12 +1530,6 @@ static void x3f_load_camf_decode_type2(x3f_camf_t *CAMF)
     ((uint8_t *)CAMF->decoded_data)[i] = _new;
   }
 }
-
-/* NOTE: the unpacking in this code is in big respects identical to
-   true_decode_one_color(). The difference is in the output you
-   build. It might be possible to make some parts shared. NOTE ALSO:
-   This means that the meta data is obfuscated using an image
-   compression algorithm. */
 
 static void camf_decode_type4(x3f_camf_t *CAMF)
 {
@@ -1637,13 +1551,13 @@ static void camf_decode_type4(x3f_camf_t *CAMF)
 
   CAMF->decoded_data_size = dst_size;
 
-  CAMF->decoded_data = x3f_limited_malloc(CAMF->decoded_data_size);
+  CAMF->decoded_data = x3f_limited_calloc(1, CAMF->decoded_data_size);
   memset(CAMF->decoded_data, 0, CAMF->decoded_data_size);
 
   dst = (uint8_t *)CAMF->decoded_data;
   dst_end = dst + dst_size;
 
-  set_bit_state(&BS, CAMF->decoding_start);
+  set_bit_state(&BS, CAMF->decoding_start,(uint8_t*)CAMF->data+CAMF->data_size);
 
   row_start_acc[0][0] = seed;
   row_start_acc[0][1] = seed;
@@ -1656,9 +1570,6 @@ static void camf_decode_type4(x3f_camf_t *CAMF)
     bool_t odd_row = row & 1;
     int32_t acc[2];
 
-    /* We loop through all the columns and the rows. But the actual
-       data is smaller than that, so we break the loop when reaching
-       the end. */
     for (col = 0; col < (int)cols; col++)
     {
       bool_t odd_col = col & 1;
@@ -1715,7 +1626,6 @@ static void x3f_load_camf_decode_type4(x3f_camf_t *CAMF)
 
   for (i = 0, p = (uint8_t *)CAMF->data; *p != 0; i++)
   {
-    /* TODO: Is this too expensive ??*/
     element = (x3f_true_huffman_element_t *)x3f_limited_realloc(element,
                                                     (i + 1) * sizeof(*element));
 
@@ -1726,14 +1636,12 @@ static void x3f_load_camf_decode_type4(x3f_camf_t *CAMF)
   CAMF->table.size = i;
   CAMF->table.element = element;
 
-  /* TODO: where does the values 28 and 32 come from? */
 #define CAMF_T4_DATA_SIZE_OFFSET 28
 #define CAMF_T4_DATA_OFFSET 32
   CAMF->decoding_size =
       *(uint32_t *)((unsigned char *)CAMF->data + CAMF_T4_DATA_SIZE_OFFSET);
   CAMF->decoding_start = (uint8_t *)CAMF->data + CAMF_T4_DATA_OFFSET;
 
-  /* TODO: can it be fewer than 8 bits? Maybe taken from TRU->table? */
   new_huffman_tree(&CAMF->tree, 8);
 
   populate_true_huffman_tree(&CAMF->tree, &CAMF->table);
@@ -1757,11 +1665,11 @@ static void camf_decode_type5(x3f_camf_t *CAMF)
   int32_t i;
 
   CAMF->decoded_data_size = CAMF->t5.decoded_data_size;
-  CAMF->decoded_data = x3f_limited_malloc(CAMF->decoded_data_size);
+  CAMF->decoded_data = x3f_limited_calloc(1, CAMF->decoded_data_size);
 
   dst = (uint8_t *)CAMF->decoded_data;
 
-  set_bit_state(&BS, CAMF->decoding_start);
+  set_bit_state(&BS, CAMF->decoding_start,(uint8_t*)CAMF->data+CAMF->data_size);
 
   for (i = 0; i < (int)CAMF->decoded_data_size; i++)
   {
@@ -1780,7 +1688,6 @@ static void x3f_load_camf_decode_type5(x3f_camf_t *CAMF)
 
   for (i = 0, p = (uint8_t *)CAMF->data; *p != 0; i++)
   {
-    /* TODO: Is this too expensive ??*/
     element = (x3f_true_huffman_element_t *)x3f_limited_realloc(element,
                                                     (i + 1) * sizeof(*element));
 
@@ -1791,14 +1698,12 @@ static void x3f_load_camf_decode_type5(x3f_camf_t *CAMF)
   CAMF->table.size = i;
   CAMF->table.element = element;
 
-  /* TODO: where does the values 28 and 32 come from? */
 #define CAMF_T5_DATA_SIZE_OFFSET 28
 #define CAMF_T5_DATA_OFFSET 32
   CAMF->decoding_size =
       *(uint32_t *)((uint8_t *)CAMF->data + CAMF_T5_DATA_SIZE_OFFSET);
   CAMF->decoding_start = (uint8_t *)CAMF->data + CAMF_T5_DATA_OFFSET;
 
-  /* TODO: can it be fewer than 8 bits? Maybe taken from TRU->table? */
   new_huffman_tree(&CAMF->tree, 8);
 
   populate_true_huffman_tree(&CAMF->tree, &CAMF->table);
@@ -1824,8 +1729,8 @@ static void x3f_setup_camf_property_entry(camf_entry_t *entry)
   uint32_t num = entry->property_num = *(uint32_t *)v;
   uint32_t off = *(uint32_t *)(v + 4);
 
-  entry->property_name = (char **)x3f_limited_malloc(num * sizeof(uint8_t *));
-  entry->property_value = (uint8_t **)x3f_limited_malloc(num * sizeof(uint8_t *));
+  entry->property_name = (char **)x3f_limited_calloc(1, num * sizeof(uint8_t *));
+  entry->property_value = (uint8_t **)x3f_limited_calloc(1, num * sizeof(uint8_t *));
 
   for (i = 0; i < (int)num; i++)
   {
@@ -1844,27 +1749,27 @@ static void set_matrix_element_info(uint32_t type, uint32_t *size,
   {
   case 0:
     *size = 2;
-    *decoded_type = M_INT; /* known to be true */
+    *decoded_type = M_INT;
     break;
   case 1:
     *size = 4;
-    *decoded_type = M_UINT; /* TODO: unknown ???? */
+    *decoded_type = M_UINT;
     break;
   case 2:
     *size = 4;
-    *decoded_type = M_UINT; /* TODO: unknown ???? */
+    *decoded_type = M_UINT;
     break;
   case 3:
     *size = 4;
-    *decoded_type = M_FLOAT; /* known to be true */
+    *decoded_type = M_FLOAT;
     break;
   case 5:
     *size = 1;
-    *decoded_type = M_UINT; /* TODO: unknown ???? */
+    *decoded_type = M_UINT;
     break;
   case 6:
     *size = 2;
-    *decoded_type = M_UINT; /* TODO: unknown ???? */
+    *decoded_type = M_UINT;
     break;
   default:
     throw LIBRAW_EXCEPTION_IO_CORRUPT;
@@ -1941,7 +1846,7 @@ static void get_matrix_copy(camf_entry_t *entry)
 static void x3f_setup_camf_matrix_entry(camf_entry_t *entry)
 {
   int i;
-  int totalsize = 1;
+  INT64 totalsize = 1I64;
 
   uint8_t *e = (uint8_t *)entry->entry;
   uint8_t *v = (uint8_t *)entry->value_address;
@@ -1962,17 +1867,20 @@ static void x3f_setup_camf_matrix_entry(camf_entry_t *entry)
     {
     }
 
-    totalsize *= size;
+    totalsize *=  INT64(size);
   }
 
   set_matrix_element_info(type, &entry->matrix_element_size,
                           &entry->matrix_decoded_type);
   entry->matrix_data = (void *)(e + off);
 
-  entry->matrix_elements = totalsize;
+  INT64 alloc_size = (entry->matrix_decoded_type == M_FLOAT ? sizeof(double) : sizeof(uint32_t)) * totalsize;
+  if (alloc_size > LIBRAW_X3F_ALLOC_LIMIT_MB * 1024UI64 * 1024UI64)
+    throw LIBRAW_EXCEPTION_TOOBIG;
+
+  entry->matrix_elements = (uint32_t)totalsize;
   entry->matrix_used_space = entry->entry_size - off;
 
-  /* This estimate only works for matrices above a certain size */
   entry->matrix_estimated_element_size = entry->matrix_used_space / totalsize;
 
   get_matrix_copy(entry);
@@ -1999,20 +1907,16 @@ static void x3f_setup_camf_entries(x3f_camf_t *CAMF)
       goto stop;
     }
 
-    /* TODO: lots of realloc - may be inefficient */
     entry = (camf_entry_t *)x3f_limited_realloc(entry, (i + 1) * sizeof(camf_entry_t));
 
-    /* Pointer */
     entry[i].entry = p;
 
-    /* Header */
     entry[i].id = *p4++;
     entry[i].version = *p4++;
     entry[i].entry_size = *p4++;
     entry[i].name_offset = *p4++;
     entry[i].value_offset = *p4++;
 
-    /* Compute addresses and sizes */
     entry[i].name_address = (char *)(p + entry[i].name_offset);
     entry[i].value_address = p + entry[i].value_offset;
     entry[i].name_size = entry[i].value_offset - entry[i].name_offset;
@@ -2065,17 +1969,16 @@ static void x3f_load_camf(x3f_info_t *I, x3f_directory_entry_t *DE)
 
   switch (CAMF->type)
   {
-  case 2: /* Older SD9-SD14 */
+  case 2:
     x3f_load_camf_decode_type2(CAMF);
     break;
-  case 4: /* TRUE ... Merrill */
+  case 4:
     x3f_load_camf_decode_type4(CAMF);
     break;
-  case 5: /* Quattro ... */
+  case 5:
     x3f_load_camf_decode_type5(CAMF);
     break;
   default:
-    /* TODO: Shouldn't this be treated as a fatal error? */
     throw LIBRAW_EXCEPTION_IO_CORRUPT;
   }
 
@@ -2085,7 +1988,7 @@ static void x3f_load_camf(x3f_info_t *I, x3f_directory_entry_t *DE)
     throw LIBRAW_EXCEPTION_IO_CORRUPT;
 }
 
-/* extern */ x3f_return_t x3f_load_data(x3f_t *x3f, x3f_directory_entry_t *DE)
+x3f_return_t x3f_load_data(x3f_t *x3f, x3f_directory_entry_t *DE)
 {
   x3f_info_t *I = &x3f->info;
 
@@ -2109,7 +2012,7 @@ static void x3f_load_camf(x3f_info_t *I, x3f_directory_entry_t *DE)
   return X3F_OK;
 }
 
-/* extern */ int32_t x3f_load_data_size(x3f_t *x3f, x3f_directory_entry_t *DE)
+int32_t x3f_load_data_size(x3f_t *x3f, x3f_directory_entry_t *DE)
 {
   x3f_info_t *I = &x3f->info;
 
@@ -2125,7 +2028,7 @@ static void x3f_load_camf(x3f_info_t *I, x3f_directory_entry_t *DE)
   }
 }
 
-/* extern */ x3f_return_t x3f_load_image_block(x3f_t *x3f,
+x3f_return_t x3f_load_image_block(x3f_t *x3f,
                                                x3f_directory_entry_t *DE)
 {
   x3f_info_t *I = &x3f->info;
@@ -2141,9 +2044,8 @@ static void x3f_load_camf(x3f_info_t *I, x3f_directory_entry_t *DE)
     break;
   default:
     throw LIBRAW_EXCEPTION_IO_CORRUPT;
-    return X3F_INTERNAL_ERROR; /* unreachable code*/
+    return X3F_INTERNAL_ERROR;
   }
 
   return X3F_OK;
 }
-
