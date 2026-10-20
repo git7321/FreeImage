@@ -254,7 +254,7 @@ void mel_decode(dec_mel_t *melp)
     while (melp->bits >= 6 && melp->num_runs < 8) {
         int eval = mel_exp[melp->k]; // number of bits associated with state
         int run = 0;
-        if (melp->tmp & (1ull << 63)) { //The next bit to decode (stored in MSB)
+        if (melp->tmp & (1UI64 << 63)) { //The next bit to decode (stored in MSB)
             //one is found
             run = 1 << eval;
             run--; // consecutive runs of 0 events - 1

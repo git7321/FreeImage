@@ -125,7 +125,7 @@ static bool checkhdr(LibRaw_abstract_datastream *ifp, int bytes)
       uint64_t q = (b64 << 8) | databyte1;
       b64 = q;
     } 
-	if (b64 != 1ULL)
+	if (b64 != 1UI64)
 		return false;
 	if (ifp->get_char() | ifp->get_char())
 		return false;
