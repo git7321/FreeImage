@@ -1,14 +1,5 @@
-// ----------------------------------------------------------------------------------------------------------------------------
-//
-// Version 2.04
-//
-// ----------------------------------------------------------------------------------------------------------------------------
-
 #define _USE_MATH_DEFINES
-
 #include <math.h>
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 class vec2
 {
@@ -48,8 +39,6 @@ public:
 	friend vec2 operator / (const vec2 &u, const vec2 &v){return vec2(u.x / v.x, u.y / v.y);}
 };
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 float dot(const vec2 &u, const vec2 &v);
 float length(const vec2 &u);
 float length2(const vec2 &u);
@@ -58,8 +47,6 @@ vec2 normalize(const vec2 &u);
 vec2 reflect(const vec2 &i, const vec2 &n);
 vec2 refract(const vec2 &i, const vec2 &n, float eta);
 vec2 rotate(const vec2 &u, float angle);
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 class vec3
 {
@@ -100,8 +87,6 @@ public:
 	friend vec3 operator / (const vec3 &u, const vec3 &v){return vec3(u.x / v.x, u.y / v.y, u.z / v.z);}
 };
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 vec3 cross(const vec3 &u, const vec3 &v);
 float dot(const vec3 &u, const vec3 &v);
 float length(const vec3 &u);
@@ -111,8 +96,6 @@ vec3 normalize(const vec3 &u);
 vec3 reflect(const vec3 &i, const vec3 &n);
 vec3 refract(const vec3 &i, const vec3 &n, float eta);
 vec3 rotate(const vec3 &u, float angle, const vec3 &v);
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 class vec4
 {
@@ -154,13 +137,9 @@ public:
 	friend vec4 operator / (const vec4 &u, const vec4 &v){return vec4(u.x / v.x, u.y / v.y, u.z / v.z, u.w / v.w);}
 };
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 class mat2x2;
 class mat3x3;
 class mat4x4;
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 class mat2x2
 {
@@ -180,12 +159,8 @@ public:
 	friend vec2 operator * (const mat2x2 &Matrix, const vec2 &u);
 };
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 mat2x2 inverse(const mat2x2 &Matrix);
 mat2x2 transpose(const mat2x2 &Matrix);
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 class mat3x3
 {
@@ -205,12 +180,8 @@ public:
 	friend vec3 operator * (const mat3x3 &Matrix, const vec3 &u);
 };
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 mat3x3 inverse(const mat3x3 &Matrix);
 mat3x3 transpose(const mat3x3 &Matrix);
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 class mat4x4
 {
@@ -230,12 +201,8 @@ public:
 	friend vec4 operator * (const mat4x4 &Matrix, const vec4 &u);
 };
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 extern mat4x4 BiasMatrix;
 extern mat4x4 BiasMatrixInverse;
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 mat4x4 inverse(const mat4x4 &Matrix);
 mat4x4 look(const vec3 &eye, const vec3 &center, const vec3 &up);

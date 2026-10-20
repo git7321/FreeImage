@@ -1,7 +1,5 @@
 #include "opengl_21_tutorials_win32_framework.h"
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 CBuffer::CBuffer()
 {
 	SetDefaults();
@@ -62,11 +60,7 @@ void CBuffer::SetDefaults()
 	Position = 0;
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 int gl_max_texture_size = 0, gl_max_texture_max_anisotropy_ext = 0;
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 CTexture::CTexture()
 {
@@ -136,7 +130,7 @@ bool CTexture::LoadTexture2D(char *FileName)
 
 bool CTexture::LoadTextureCubeMap(char **FileNames)
 {
-	int i, Width, Height, BPP;
+	int Width, Height, BPP, i;
 
 	FIBITMAP *dib[6];
 
@@ -279,8 +273,6 @@ FIBITMAP *CTexture::GetBitmap(char *FileName, int &Width, int &Height, int &BPP)
 	return dib;
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 CShaderProgram::CShaderProgram()
 {
 	SetDefaults();
@@ -416,8 +408,6 @@ void CShaderProgram::SetDefaults()
 	AttribLocations = NULL;
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 CCamera::CCamera()
 {
 	ViewMatrix = NULL;
@@ -534,11 +524,7 @@ void CCamera::SetViewMatrixPointer(float *ViewMatrix, float *ViewMatrixInverse)
 	CalculateViewMatrix();
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 CCamera Camera;
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 COpenGLRenderer::COpenGLRenderer()
 {
@@ -551,11 +537,11 @@ COpenGLRenderer::~COpenGLRenderer()
 
 bool COpenGLRenderer::Init()
 {
-	int i, x, y;
+	int x, y;
 	bool Error = false;
 
 	Error |= !EarthMap.LoadTexture2D("earthmap.jxr");
-	Error |= !CloudsMap.LoadTexture2D("cloudsmap.jpg");
+	Error |= !CloudsMap.LoadTexture2D("cloudsmap.jp2");
 
 	Error |= !gfs.Load("groundfromspace.vs", "groundfromspace.fs");
 	Error |= !gfa.Load("groundfromatmosphere.vs", "groundfromatmosphere.fs");
@@ -579,7 +565,7 @@ bool COpenGLRenderer::Init()
 
 	GLuint programs[] = {gfs, gfa, sfs, sfa};
 
-	for(i = 0; i < 4; i++)
+	for(int i = 0; i < 4; i++)
 	{
 		glUseProgram(programs[i]);
 		glUniform3f(glGetUniformLocation(programs[i], "v3LightPos"), 0.0f, 0.0f, 1.0f);
@@ -612,7 +598,7 @@ bool COpenGLRenderer::Init()
 	{
 		a = -(float)M_PI;
 
-		for(x = 0; x < X; x++)
+		for(int x = 0; x < X; x++)
 		{
 			vertices[y * X + x] = normalize(vec3((float)sin(a) * (float)cos(b), (float)sin(b), (float)(cos(a) * cos(b))));
 			a += stepa;
@@ -639,7 +625,7 @@ bool COpenGLRenderer::Init()
 
 	for(y = 0; y < Y - 2; y++)
 	{
-		for(int x = 0; x < X; x++)
+		for(x = 0; x < X; x++)
 		{
 			Vertices[vpos++] = vertices[(y + 0) * X + ((x + 0) % X)];
 			Vertices[vpos++] = vertices[(y + 0) * X + ((x + 1) % X)];
@@ -753,7 +739,6 @@ void COpenGLRenderer::Render(float FrameTime)
 
 	glUseProgram(0);
 
-	//glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -767,9 +752,6 @@ void COpenGLRenderer::Render(float FrameTime)
 
 	if(length(Camera.Position) > OuterRadius) program = sfs;
 	else program = sfa;
-
-	//glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-	//glEnable(GL_BLEND);
 
 	glCullFace(GL_FRONT);
 
@@ -826,15 +808,9 @@ void COpenGLRenderer::Destroy()
 	sfa.Destroy();
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 COpenGLRenderer OpenGLRenderer;
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 CString ModuleDirectory, ErrorLog;
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 void GetModuleDirectory()
 {
@@ -844,8 +820,6 @@ void GetModuleDirectory()
 	ModuleDirectory = moduledirectory;
 	delete [] moduledirectory;
 }
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 COpenGLView::COpenGLView()
 {
@@ -1054,14 +1028,6 @@ void COpenGLView::Destroy()
 
 void COpenGLView::OnKeyDown(UINT Key)
 {
-	/*switch(Key)
-	{
-		case VK_F1:
-			break;
-
-		case VK_SPACE:
-			break;
-	}*/
 }
 
 void COpenGLView::OnLButtonDown(int X, int Y)
@@ -1166,11 +1132,7 @@ void COpenGLView::OnSize(int Width, int Height)
 	OpenGLRenderer.Resize(Width, Height);
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 COpenGLView OpenGLView;
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -1192,7 +1154,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 			OpenGLView.OnMouseMove(LOWORD(lParam), HIWORD(lParam));
 			break;
 
-		case 0x020A: // WM_MOUSWHEEL
+		case 0x020A:
 			OpenGLView.OnMouseWheel(HIWORD(wParam));
 			break;
 
@@ -1214,8 +1176,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 
 	return 0;
 }
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR sCmdLine, int iShow)
 {

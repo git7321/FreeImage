@@ -1,35 +1,18 @@
-// ----------------------------------------------------------------------------------------------------------------------------
-//
-// Version 2.02
-//
-// ----------------------------------------------------------------------------------------------------------------------------
-
 #include <windows.h>
-
 #include "glmath.h"
 #include "string.h"
-
-#include <gl/glew.h> // http://glew.sourceforge.net/
+#include <gl/glew.h>
 #include <gl/wglew.h>
-
-#include "FreeImage.h" // http://freeimage.sourceforge.net/
-
-// ----------------------------------------------------------------------------------------------------------------------------
+#include "FreeImage.h"
 
 #pragma comment(lib, "opengl32.lib")
 #pragma comment(lib, "glu32.lib")
 #pragma comment(lib, "glew32.lib")
 #pragma comment(lib, "FreeImage.lib")
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 extern CString ModuleDirectory, ErrorLog;
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 #define BUFFER_SIZE_INCREMENT 1048576
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 class CBuffer
 {
@@ -50,11 +33,7 @@ private:
 	void SetDefaults();
 };
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 extern int gl_max_texture_size, gl_max_texture_max_anisotropy_ext;
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 class CTexture
 {
@@ -74,8 +53,6 @@ public:
 protected:
 	FIBITMAP *CTexture::GetBitmap(char *FileName, int &Width, int &Height, int &BPP);
 };
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 class CShaderProgram
 {
@@ -99,8 +76,6 @@ protected:
 	void SetDefaults();
 };
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 class CCamera
 {
 protected:
@@ -119,8 +94,6 @@ public:
 	void OnMouseMove(int dx, int dy);
 	void SetViewMatrixPointer(float *ViewMatrix, float *ViewMatrixInverse = NULL);
 };
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 class COpenGLRenderer
 {
@@ -147,8 +120,6 @@ public:
 	void Resize(int Width, int Height);
 	void Destroy();
 };
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 class COpenGLView
 {
@@ -179,10 +150,6 @@ public:
 	void OnSize(int Width, int Height);
 };
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam);
-
-// ----------------------------------------------------------------------------------------------------------------------------
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR sCmdLine, int iShow);

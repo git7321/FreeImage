@@ -8,12 +8,12 @@ CFG=earth - Win32 Release
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
-!MESSAGE NMAKE /f "earth.mak".
+!MESSAGE NMAKE /f "EARTH.MAK".
 !MESSAGE 
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "earth.mak" CFG="earth - Win32 Release"
+!MESSAGE NMAKE /f "EARTH.MAK" CFG="earth - Win32 Release"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
@@ -28,25 +28,25 @@ CPP=cl.exe
 RSC=rc.exe
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "Release"
-# PROP BASE Intermediate_Dir "Release"
+# PROP BASE Output_Dir "test"
+# PROP BASE Intermediate_Dir "test"
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "Release"
-# PROP Intermediate_Dir "Release"
+# PROP Output_Dir "test"
+# PROP Intermediate_Dir "test"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MD /W3 /EHsc /Gy /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FD /Oxs /GF /c
-# ADD CPP /nologo /MD /W3 /EHsc /Gy /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FD /Oxs /GF /c
+# ADD BASE CPP /nologo /MD /W3 /Gy /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FD /EHsc /Oxs /GF /c
+# ADD CPP /nologo /MD /W3 /Gy /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FD /EHsc /Oxs /GF /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib msvcxp.lib /nologo /version:5.2 /debug /subsystem:windows /machine:I386 /opt:ref,icf,nowin98 /osversion:5.2 /release
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib msvcxp.lib /nologo /version:5.2 /debug /subsystem:windows /machine:I386 /opt:ref,icf,nowin98 /osversion:5.2 /release
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib ole32.lib oleaut32.lib opengl32.lib glew32.lib freeimage.lib uuid.lib msvcxp.lib /nologo /version:5.2 /subsystem:windows /debug /machine:I386 /opt:ref,icf,nowin98 /osversion:5.2 /release
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib ole32.lib oleaut32.lib opengl32.lib glew32.lib freeimage.lib uuid.lib msvcxp.lib /nologo /version:5.2 /subsystem:windows /debug /machine:I386 /opt:ref,icf,nowin98 /osversion:5.2 /release
 # Begin Target
 
 # Name "earth - Win32 Release"

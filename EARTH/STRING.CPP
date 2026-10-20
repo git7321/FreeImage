@@ -1,8 +1,6 @@
 #include "string.h"
 #include "specstrings.h"
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
 CString::CString()
 {
 	String = NULL;
@@ -81,7 +79,6 @@ CString operator + (const CString &String1, const CString &String2)
 void CString::Append(const char *Format, ...)
 {
 	va_list ArgList;
-
 	va_start(ArgList, Format);
 
 	int AppendixLength = _vscprintf(Format, ArgList);
@@ -104,7 +101,6 @@ void CString::Append(const char *Format, ...)
 void CString::Set(const char *Format, ...)
 {
 	va_list ArgList;
-
 	va_start(ArgList, Format);
 
 	delete [] String;
