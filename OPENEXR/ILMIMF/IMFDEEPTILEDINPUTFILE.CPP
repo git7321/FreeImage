@@ -1270,10 +1270,6 @@ DeepTiledInputFile::readTiles (int dx1, int dx2, int dy1, int dy2, int lx, int l
     {
         Lock lock (*_data->_streamData);
 
-        if (_data->slices.size() == 0)
-            throw IEX_NAMESPACE::ArgExc ("No frame buffer specified "
-                               "as pixel data destination.");
-
         if (!isValidLevel (lx, ly))
             THROW (IEX_NAMESPACE::ArgExc,
                    "Level coordinate "
